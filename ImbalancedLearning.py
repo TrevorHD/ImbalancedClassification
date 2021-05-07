@@ -9,7 +9,6 @@ from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
-from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import auc
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
@@ -20,6 +19,9 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 import numpy
 import pandas
 import imblearn
+from numpy import sqrt
+from numpy import argmax
+from numpy import arange
 from matplotlib import pyplot
 from collections import Counter
 from imblearn.pipeline import Pipeline
@@ -181,8 +183,12 @@ metrics.classification_report(test_y, cflLin.predict(test_x))
 metrics.confusion_matrix(test_y, cflLin.predict(test_x))
 
 # Get overall accuracy on test data
-# Note: this is not meaningful since data is severely imbalanced
+# Note: this is not helpful since data is severely imbalanced
 metrics.accuracy_score(test_y, cflLin.predict(test_x))
+
+# Note: we can do the above for just about any model
+# If we want to plot ROC and PR curves, we need posterior probabilities
+# SVM does not produce these, so we will use a logistic regression
 
 # Create no-skill model to compare model performance
 cflNull = DummyClassifier(strategy = "stratified")
@@ -200,22 +206,64 @@ precision, recall, _ = precision_recall_curve(test_y, p_model)
 print(auc(recall, precision))
 
 # Plot ROC curve and no-skill line
+# Place point at optimal location based on geometric mean and print optimal threshold
+# Note: this is not helpful since data is severely imbalanced
 f_pos, t_pos, _ = roc_curve(test_y, p_null)
 pyplot.plot(f_pos, t_pos, linestyle = "--", label = "No Skill", color = "black")
-f_pos, t_pos, _ = roc_curve(test_y, p_model)
+f_pos, t_pos, thresh = roc_curve(test_y, p_model)
 pyplot.plot(f_pos, t_pos, marker = ".", label = "Logistic Regression", color = "green")
+max_val = argmax(sqrt(t_pos*(1 - f_pos)))
+print(thresh[max_val])
+pyplot.scatter(f_pos[max_val], t_pos[max_val], marker = "o", color = 'black')
 pyplot.xlabel("1 - Specificity")
 pyplot.ylabel("Sensitivity")
 pyplot.legend()
 pyplot.show()
 
 # Plot PR curve and no-skill line
+# Place point at optimal location based on F-score and print optimal threshold
 no_skill = len(test_y[test_y == 1])/len(test_y)
 pyplot.plot([0, 1], [no_skill, no_skill], linestyle = "--", label = "No Skill", color = "black")
-precision, recall, _ = precision_recall_curve(test_y, p_model)
+precision, recall, thresh = precision_recall_curve(test_y, p_model)
 pyplot.plot(recall, precision, marker = ".", label = "Logistic Regression", color = "green")
+max_val = argmax((2 * precision * recall)/(precision + recall))
+print(thresh[max_val])
+pyplot.scatter(recall[max_val], precision[max_val], marker = "o", color = 'black')
 pyplot.xlabel("Recall (Sensitivity)")
 pyplot.ylabel("Precision (PPV)")
 pyplot.legend(bbox_to_anchor = (0.03, 0.73, 0.4, 0.2))
 pyplot.show()
+
+# Define function to convert posterior probabilities to class labels
+def prob_to_class(probs, thresh):
+	return (probs >= thresh).astype("int")
+
+# Predict class labels and get F-score for default threshold (0.5)
+y_hat = model.predict(test_x)
+print(f1_score(test_y, y_hat))
+
+# Predict posterior probabilities
+# For each threshold, assign class to probabilities and compute F-score
+# Find maximum F-score and threshold at which it occurs
+y_hat = model.predict_proba(test_x)
+p_model = y_hat[:, 1]
+thresh = arange(0, 1, 0.001)
+f_scores = [f1_score(test_y, prob_to_class(p_model, i)) for i in thresh]
+print(thresh[argmax(f_scores)])
+print(f_scores[argmax(f_scores)])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
