@@ -11,6 +11,7 @@ from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import auc
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import RepeatedStratifiedKFold
@@ -182,4 +183,39 @@ metrics.confusion_matrix(test_y, cflLin.predict(test_x))
 # Get overall accuracy on test data
 # Note: this is not meaningful since data is severely imbalanced
 metrics.accuracy_score(test_y, cflLin.predict(test_x))
+
+# Create no-skill model to compare model performance
+cflNull = DummyClassifier(strategy = "stratified")
+cflNull.fit(train_x, train_y)
+y_hat = cflNull.predict_proba(test_x)
+p_null = y_hat[:, 1]
+
+# Fit logistic regression; find AUC and AUPRC
+model = LogisticRegression(solver = "lbfgs")
+model.fit(train_x, train_y)
+y_hat = model.predict_proba(test_x)
+p_model = y_hat[:, 1]
+print(roc_auc_score(test_y, p_model))
+precision, recall, _ = precision_recall_curve(test_y, p_model)
+print(auc(recall, precision))
+
+# Plot ROC curve and no-skill line
+f_pos, t_pos, _ = roc_curve(test_y, p_null)
+pyplot.plot(f_pos, t_pos, linestyle = "--", label = "No Skill", color = "black")
+f_pos, t_pos, _ = roc_curve(test_y, p_model)
+pyplot.plot(f_pos, t_pos, marker = ".", label = "Logistic Regression", color = "green")
+pyplot.xlabel("1 - Specificity")
+pyplot.ylabel("Sensitivity")
+pyplot.legend()
+pyplot.show()
+
+# Plot PR curve and no-skill line
+no_skill = len(test_y[test_y == 1])/len(test_y)
+pyplot.plot([0, 1], [no_skill, no_skill], linestyle = "--", label = "No Skill", color = "black")
+precision, recall, _ = precision_recall_curve(test_y, p_model)
+pyplot.plot(recall, precision, marker = ".", label = "Logistic Regression", color = "green")
+pyplot.xlabel("Recall (Sensitivity)")
+pyplot.ylabel("Precision (PPV)")
+pyplot.legend(bbox_to_anchor = (0.03, 0.73, 0.4, 0.2))
+pyplot.show()
 
