@@ -12,6 +12,8 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import auc
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LogisticRegressionCV
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import RepeatedStratifiedKFold
@@ -84,14 +86,7 @@ ax.legend()
 pyplot.show()
 
 
-
-
-
-##### Fit support vector machines -------------------------------------------------------------------------
-
-# Fit SVM with linear kernel on training data
-cflLin = svm.SVC(gamma = "auto", kernel = "linear")
-cflLin.fit(train_x, train_y)
+##### Fit discriminant analyses ---------------------------------------------------------------------------
 
 # Define functions for plotting contours and decision boundary
 def plot_meshpoints(x, y, h=.02):
@@ -99,17 +94,19 @@ def plot_meshpoints(x, y, h=.02):
     y_min, y_max = y.min() - 2, y.max() + 2
     xx, yy = numpy.meshgrid(numpy.arange(x_min, x_max, h), numpy.arange(y_min, y_max, h))
     return xx, yy
-def plot_contours(ax, cflLin, xx, yy, **params):
-    Z = cflLin.predict(numpy.c_[xx.ravel(), yy.ravel()])
+def plot_contours(ax, clf, xx, yy, **params):
+    Z = clf.predict(numpy.c_[xx.ravel(), yy.ravel()])
     Z = Z.reshape(xx.shape)
     out = ax.contourf(xx, yy, Z, **params)
     return out
 
-# Plot linear decision boundary
+# Fit LDA on training data; plot decision boundary
+clfLDA = LinearDiscriminantAnalysis()
+clfLDA.fit(train_x, train_y)
 fig, ax = pyplot.subplots()
 X0, X1 = train_x[:, 0], train_x[:, 1]
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, cflLin, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_contours(ax, clfLDA, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
 for g in numpy.unique(train_y):
     i = numpy.where(train_y == g)
     ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
@@ -120,13 +117,13 @@ pyplot.ylim([-6, 6])
 ax.legend()
 pyplot.show()
 
-# Fit SVM with quadratic kernel on training data; plot decision boundary on test data
-cfl2dg = svm.NuSVC(nu = 0.009, gamma = "auto", kernel = "poly", degree = 2)
-cfl2dg.fit(train_x, train_y)
+# Fit QDA on training data; plot decision boundary
+clfQDA = QuadraticDiscriminantAnalysis()
+clfQDA.fit(train_x, train_y)
 fig, ax = pyplot.subplots()
 X0, X1 = train_x[:, 0], train_x[:, 1]
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, cfl2dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_contours(ax, clfQDA, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
 for g in numpy.unique(train_y):
     i = numpy.where(train_y == g)
     ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
@@ -137,13 +134,29 @@ pyplot.ylim([-6, 6])
 ax.legend()
 pyplot.show()
 
-# Fit SVM with cubic kernel on training data; plot decision boundary on test data
-cfl3dg = svm.NuSVC(nu = 0.009, gamma = "auto", kernel = "poly", degree = 3)
-cfl3dg.fit(train_x, train_y)
+# Print F-scores; linear kernel is better
+print(metrics.f1_score(train_y, clfLDA.predict(train_x)))
+print(metrics.f1_score(train_y, clfQDA.predict(train_x)))
+
+# Print AUPRC; linear kernel is better
+precision, recall, _ = precision_recall_curve(train_y, clfLDA.predict(train_x))
+print(auc(recall, precision))
+precision, recall, _ = precision_recall_curve(train_y, clfQDA.predict(train_x))
+print(auc(recall, precision))
+
+
+
+
+
+##### Fit support vector machines -------------------------------------------------------------------------
+
+# Fit SVM with linear kernel on training data; plot decision boundary
+clfLin = svm.SVC(gamma = "auto", kernel = "linear")
+clfLin.fit(train_x, train_y)
 fig, ax = pyplot.subplots()
 X0, X1 = train_x[:, 0], train_x[:, 1]
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, cfl3dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_contours(ax, clfLin, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
 for g in numpy.unique(train_y):
     i = numpy.where(train_y == g)
     ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
@@ -154,13 +167,47 @@ pyplot.ylim([-6, 6])
 ax.legend()
 pyplot.show()
 
-# Fit SVM with radial kernel on training data; plot decision boundary on test data
-cflRbf = svm.NuSVC(nu = 0.009, gamma = "auto", kernel = "rbf")
-cflRbf.fit(train_x, train_y)
+# Fit SVM with quadratic kernel on training data; plot decision boundary
+clf2dg = svm.NuSVC(nu = 0.009, gamma = "auto", kernel = "poly", degree = 2)
+clf2dg.fit(train_x, train_y)
 fig, ax = pyplot.subplots()
 X0, X1 = train_x[:, 0], train_x[:, 1]
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, cflRbf, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_contours(ax, clf2dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+for g in numpy.unique(train_y):
+    i = numpy.where(train_y == g)
+    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
+ax.set_ylabel("X1")
+ax.set_xlabel("X2")
+pyplot.xlim([0, 5])
+pyplot.ylim([-6, 6])
+ax.legend()
+pyplot.show()
+
+# Fit SVM with cubic kernel on training data; plot decision boundary
+clf3dg = svm.NuSVC(nu = 0.009, gamma = "auto", kernel = "poly", degree = 3)
+clf3dg.fit(train_x, train_y)
+fig, ax = pyplot.subplots()
+X0, X1 = train_x[:, 0], train_x[:, 1]
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clf3dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+for g in numpy.unique(train_y):
+    i = numpy.where(train_y == g)
+    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
+ax.set_ylabel("X1")
+ax.set_xlabel("X2")
+pyplot.xlim([0, 5])
+pyplot.ylim([-6, 6])
+ax.legend()
+pyplot.show()
+
+# Fit SVM with radial kernel on training data; plot decision boundary
+clfRbf = svm.NuSVC(nu = 0.009, gamma = "auto", kernel = "rbf")
+clfRbf.fit(train_x, train_y)
+fig, ax = pyplot.subplots()
+X0, X1 = train_x[:, 0], train_x[:, 1]
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfRbf, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
 for g in numpy.unique(train_y):
     i = numpy.where(train_y == g)
     ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
@@ -172,29 +219,29 @@ ax.legend()
 pyplot.show()
 
 # Print F-scores; linear and radial kernels are best
-print(metrics.f1_score(train_y, cflLin.predict(train_x)))
-print(metrics.f1_score(train_y, cfl2dg.predict(train_x)))
-print(metrics.f1_score(train_y, cfl3dg.predict(train_x)))
-print(metrics.f1_score(train_y, cflRbf.predict(train_x)))
+print(metrics.f1_score(train_y, clfLin.predict(train_x)))
+print(metrics.f1_score(train_y, clf2dg.predict(train_x)))
+print(metrics.f1_score(train_y, clf3dg.predict(train_x)))
+print(metrics.f1_score(train_y, clfRbf.predict(train_x)))
 
 # Print AUPRC; linear and radial kernels are best
-precision, recall, _ = precision_recall_curve(train_y, cflLin.predict(train_x))
+precision, recall, _ = precision_recall_curve(train_y, clfLin.predict(train_x))
 print(auc(recall, precision))
-precision, recall, _ = precision_recall_curve(train_y, cfl2dg.predict(train_x))
+precision, recall, _ = precision_recall_curve(train_y, clf2dg.predict(train_x))
 print(auc(recall, precision))
-precision, recall, _ = precision_recall_curve(train_y, cfl3dg.predict(train_x))
+precision, recall, _ = precision_recall_curve(train_y, clf3dg.predict(train_x))
 print(auc(recall, precision))
-precision, recall, _ = precision_recall_curve(train_y, cflRbf.predict(train_x))
+precision, recall, _ = precision_recall_curve(train_y, clfRbf.predict(train_x))
 print(auc(recall, precision))
 
 # Evaluate performance of linear kernel on test data
 # Get classification report and confusion matrix
-metrics.classification_report(test_y, cflLin.predict(test_x))
-metrics.confusion_matrix(test_y, cflLin.predict(test_x))
+metrics.classification_report(test_y, clfLin.predict(test_x))
+metrics.confusion_matrix(test_y, clfLin.predict(test_x))
 
 # Get overall accuracy on test data
 # Note: this is not helpful since data is severely imbalanced
-metrics.accuracy_score(test_y, cflLin.predict(test_x))
+metrics.accuracy_score(test_y, clfLin.predict(test_x))
 
 
 
@@ -206,9 +253,9 @@ metrics.accuracy_score(test_y, cflLin.predict(test_x))
 # Thus, we will use logistic regression instead of SVM
 
 # Create no-skill model to compare model performance
-cflNull = DummyClassifier(strategy = "stratified")
-cflNull.fit(train_x, train_y)
-y_hat = cflNull.predict_proba(test_x)
+clfNull = DummyClassifier(strategy = "stratified")
+clfNull.fit(train_x, train_y)
+y_hat = clfNull.predict_proba(test_x)
 p_null = y_hat[:, 1]
 
 # Fit logistic regression; find AUC and AUPRC on test data
