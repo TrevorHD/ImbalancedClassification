@@ -6,7 +6,6 @@ from sklearn import svm
 from sklearn.dummy import DummyClassifier
 from sklearn.datasets import make_classification
 from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import make_scorer
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
@@ -111,9 +110,9 @@ fig, ax = pyplot.subplots()
 X0, X1 = train_x[:, 0], train_x[:, 1]
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, cflLin, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(test_y):
-    i = numpy.where(test_y == g)
-    ax.scatter(test_x[:, 0][i], test_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
+for g in numpy.unique(train_y):
+    i = numpy.where(train_y == g)
+    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
 ax.set_ylabel("X1")
 ax.set_xlabel("X2")
 pyplot.xlim([0, 5])
@@ -128,9 +127,9 @@ fig, ax = pyplot.subplots()
 X0, X1 = train_x[:, 0], train_x[:, 1]
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, cfl2dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(test_y):
-    i = numpy.where(test_y == g)
-    ax.scatter(test_x[:, 0][i], test_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
+for g in numpy.unique(train_y):
+    i = numpy.where(train_y == g)
+    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
 ax.set_ylabel("X1")
 ax.set_xlabel("X2")
 pyplot.xlim([0, 5])
@@ -145,9 +144,9 @@ fig, ax = pyplot.subplots()
 X0, X1 = train_x[:, 0], train_x[:, 1]
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, cfl3dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(test_y):
-    i = numpy.where(test_y == g)
-    ax.scatter(test_x[:, 0][i], test_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
+for g in numpy.unique(train_y):
+    i = numpy.where(train_y == g)
+    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
 ax.set_ylabel("X1")
 ax.set_xlabel("X2")
 pyplot.xlim([0, 5])
@@ -162,9 +161,9 @@ fig, ax = pyplot.subplots()
 X0, X1 = train_x[:, 0], train_x[:, 1]
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, cflRbf, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(test_y):
-    i = numpy.where(test_y == g)
-    ax.scatter(test_x[:, 0][i], test_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
+for g in numpy.unique(train_y):
+    i = numpy.where(train_y == g)
+    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
 ax.set_ylabel("X1")
 ax.set_xlabel("X2")
 pyplot.xlim([0, 5])
@@ -172,25 +171,39 @@ pyplot.ylim([-6, 6])
 ax.legend()
 pyplot.show()
 
+# Print F-scores; linear and radial kernels are best
+print(metrics.f1_score(train_y, cflLin.predict(train_x)))
+print(metrics.f1_score(train_y, cfl2dg.predict(train_x)))
+print(metrics.f1_score(train_y, cfl3dg.predict(train_x)))
+print(metrics.f1_score(train_y, cflRbf.predict(train_x)))
 
+# Print AUPRC; linear and radial kernels are best
+precision, recall, _ = precision_recall_curve(train_y, cflLin.predict(train_x))
+print(auc(recall, precision))
+precision, recall, _ = precision_recall_curve(train_y, cfl2dg.predict(train_x))
+print(auc(recall, precision))
+precision, recall, _ = precision_recall_curve(train_y, cfl3dg.predict(train_x))
+print(auc(recall, precision))
+precision, recall, _ = precision_recall_curve(train_y, cflRbf.predict(train_x))
+print(auc(recall, precision))
 
-
-
-##### ROC and precision-recall curves ---------------------------------------------------------------------
-
-# Get classification report on test data
+# Evaluate performance of linear kernel on test data
+# Get classification report and confusion matrix
 metrics.classification_report(test_y, cflLin.predict(test_x))
-
-# Get confusion matrix on test data
 metrics.confusion_matrix(test_y, cflLin.predict(test_x))
 
 # Get overall accuracy on test data
 # Note: this is not helpful since data is severely imbalanced
 metrics.accuracy_score(test_y, cflLin.predict(test_x))
 
-# Note: we can do the above for just about any model
-# If we want to plot ROC and PR curves, we need posterior probabilities
-# SVM does not produce these, so we will use a logistic regression
+
+
+
+
+##### ROC and precision-recall curves ---------------------------------------------------------------------
+
+# We need to work with fitted probabilities and thresholds
+# Thus, we will use logistic regression instead of SVM
 
 # Create no-skill model to compare model performance
 cflNull = DummyClassifier(strategy = "stratified")
@@ -198,7 +211,8 @@ cflNull.fit(train_x, train_y)
 y_hat = cflNull.predict_proba(test_x)
 p_null = y_hat[:, 1]
 
-# Fit logistic regression; find AUC and AUPRC
+# Fit logistic regression; find AUC and AUPRC on test data
+# Note: AUC is not paritcularly useful here
 model = LogisticRegression(solver = "lbfgs")
 model.fit(train_x, train_y)
 y_hat = model.predict_proba(test_x)
@@ -207,7 +221,7 @@ print(roc_auc_score(test_y, p_model))
 precision, recall, _ = precision_recall_curve(test_y, p_model)
 print(auc(recall, precision))
 
-# Plot ROC curve and no-skill line
+# Plot ROC curve and no-skill line on test data
 # Place point at optimal location based on geometric mean and print optimal threshold
 # Note: this is not helpful since data is severely imbalanced
 f_pos, t_pos, _ = roc_curve(test_y, p_null)
@@ -222,7 +236,7 @@ pyplot.ylabel("Sensitivity")
 pyplot.legend()
 pyplot.show()
 
-# Plot PR curve and no-skill line
+# Plot PR curve and no-skill line on test data
 # Place point at optimal location based on F-score and print optimal threshold
 no_skill = len(test_y[test_y == 1])/len(test_y)
 pyplot.plot([0, 1], [no_skill, no_skill], linestyle = "--", label = "No Skill", color = "black")
