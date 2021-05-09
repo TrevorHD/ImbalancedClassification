@@ -6,11 +6,13 @@ from sklearn import svm
 from sklearn.dummy import DummyClassifier
 from sklearn.datasets import make_classification
 from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import make_scorer
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import auc
 from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import RepeatedStratifiedKFold
@@ -256,14 +258,29 @@ print(f_scores[argmax(f_scores)])
 
 
 
+##### Model selection with cross validation and cost-sensitive learning -----------------------------------
 
+# 50-fold cross-validated regression with no class weights
+model = LogisticRegressionCV(cv = 50, solver = "lbfgs")
+model.fit(train_x, train_y)
+metrics.confusion_matrix(test_y, model.predict(test_x))
 
+# 50-fold cross-validated regression with 100:1 penalty for misclassifying 
+model = LogisticRegressionCV(cv = 50, solver = "lbfgs", class_weight = {0:1, 1:100})
+model.fit(train_x, train_y)
+metrics.confusion_matrix(test_y, model.predict(test_x))
 
+# Predict probabilities with cost-sensitive model
+y_hat = model.predict_proba(test_x)
+p_model = y_hat[:, 1]
 
-
-
-
-
-
-
+# Plot precision and recall versus probability threshold for cost-sensitive model
+precision, recall, thresh = precision_recall_curve(test_y, p_model)
+pyplot.plot(numpy.append(thresh, 1), precision, marker = ".", label = "Precision", color = "green")
+pyplot.plot(numpy.append(thresh, 1), recall, marker = ".", label = "Recall", color = "blue")
+pyplot.xlabel("Threshold")
+pyplot.ylabel("Value")
+pyplot.legend(bbox_to_anchor = (0.72, 0.75, 0.1, 0.2))
+pyplot.show()
+pyplot.show()
 
