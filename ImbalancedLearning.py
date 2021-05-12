@@ -366,6 +366,7 @@ mean(output["test_precision"])
 mean(output["test_recall"])
 
 # Oversample minority class at 1:1 ratio
+# This block of code does not influence models, and just shows how over-sampling works
 os = RandomOverSampler(sampling_strategy = "minority")
 os_x, os_y = os.fit_resample(train_x, train_y)
 print(Counter(train_y))
@@ -379,10 +380,12 @@ cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 3246
 output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "recall", "precision"],
                         cv = cv, n_jobs = -1)
 mean(output["test_f1_micro"])
+mean(output["test_f1_macro"])
 mean(output["test_precision"])
 mean(output["test_recall"])
 
 # Oversample minority class at 1:4 ratio
+# This block of code does not influence models, and just shows how over-sampling works
 os = RandomOverSampler(sampling_strategy = 0.25)
 os_x, os_y = os.fit_resample(train_x, train_y)
 print(Counter(train_y))
@@ -390,16 +393,57 @@ print(Counter(os_y))
 
 # Fit to training data and evaluate performance on test data (4:1 rebalancing)
 # Find F-score, precision, and recall
-pipeline = Pipeline[("samp", RandomOverSampler(sampling_strategy = 0.25)),
-                    ("model", LogisticRegression(solver = "lbfgs"))]
+pipeline = Pipeline([("samp", RandomOverSampler(sampling_strategy = 0.25)),
+                    ("model", LogisticRegression(solver = "lbfgs"))])
 cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
 output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "recall", "precision"],
                         cv = cv, n_jobs = -1)
 mean(output["test_f1_micro"])
+mean(output["test_f1_macro"])
 mean(output["test_precision"])
 mean(output["test_recall"])
 
 
 
 
+
+##### Logistic regression: rebalance data with under-sampling ---------------------------------------------
+
+# Undersample majority class at 1:1 ratio
+# This block of code does not influence models, and just shows how under-sampling works
+us = RandomUnderSampler(sampling_strategy = "majority")
+us_x, us_y = us.fit_resample(train_x, train_y)
+print(Counter(train_y))
+print(Counter(us_y))
+
+# Fit to training data and evaluate performance on test data (1:1 rebalancing)
+# Find F-score, precision, and recall
+pipeline = Pipeline([("samp", RandomUnderSampler(sampling_strategy = "majority")),
+                     ("model", LogisticRegression(solver = "lbfgs"))])
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "recall", "precision"],
+                        cv = cv, n_jobs = -1)
+mean(output["test_f1_micro"])
+mean(output["test_f1_macro"])
+mean(output["test_precision"])
+mean(output["test_recall"])
+
+# Oversample minority class at 1:4 ratio
+# This block of code does not influence models, and just shows how under-sampling works
+us = RandomUnderSampler(sampling_strategy = 0.25)
+us_x, us_y = us.fit_resample(train_x, train_y)
+print(Counter(train_y))
+print(Counter(us_y))
+
+# Fit to training data and evaluate performance on test data (4:1 rebalancing)
+# Find F-score, precision, and recall
+pipeline = Pipeline([("samp", RandomUnderSampler(sampling_strategy = 0.25)),
+                    ("model", LogisticRegression(solver = "lbfgs"))])
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "recall", "precision"],
+                        cv = cv, n_jobs = -1)
+mean(output["test_f1_micro"])
+mean(output["test_f1_macro"])
+mean(output["test_precision"])
+mean(output["test_recall"])
 
