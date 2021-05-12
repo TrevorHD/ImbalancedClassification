@@ -359,9 +359,10 @@ pyplot.show()
 # Fit to training data and evaluate performance on test data (no rebalancing)
 cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
 output = cross_validate(LogisticRegression(solver = "lbfgs"), data_x, data_y,
-                        scoring = ["f1_micro", "recall", "precision"],
+                        scoring = ["f1_micro", "f1_macro", "recall", "precision"],
                         cv = cv, n_jobs = -1)
 mean(output["test_f1_micro"])
+mean(output["test_f1_macro"])
 mean(output["test_precision"])
 mean(output["test_recall"])
 
@@ -377,7 +378,7 @@ print(Counter(os_y))
 pipeline = Pipeline([("samp", RandomOverSampler(sampling_strategy = "minority")),
                      ("model", LogisticRegression(solver = "lbfgs"))])
 cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "recall", "precision"],
+output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "f1_macro", "recall", "precision"],
                         cv = cv, n_jobs = -1)
 mean(output["test_f1_micro"])
 mean(output["test_f1_macro"])
@@ -396,7 +397,7 @@ print(Counter(os_y))
 pipeline = Pipeline([("samp", RandomOverSampler(sampling_strategy = 0.25)),
                     ("model", LogisticRegression(solver = "lbfgs"))])
 cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "recall", "precision"],
+output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "f1_macro", "recall", "precision"],
                         cv = cv, n_jobs = -1)
 mean(output["test_f1_micro"])
 mean(output["test_f1_macro"])
@@ -421,7 +422,7 @@ print(Counter(us_y))
 pipeline = Pipeline([("samp", RandomUnderSampler(sampling_strategy = "majority")),
                      ("model", LogisticRegression(solver = "lbfgs"))])
 cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "recall", "precision"],
+output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "f1_macro", "recall", "precision"],
                         cv = cv, n_jobs = -1)
 mean(output["test_f1_micro"])
 mean(output["test_f1_macro"])
@@ -440,7 +441,36 @@ print(Counter(us_y))
 pipeline = Pipeline([("samp", RandomUnderSampler(sampling_strategy = 0.25)),
                     ("model", LogisticRegression(solver = "lbfgs"))])
 cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "recall", "precision"],
+output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "f1_macro", "recall", "precision"],
+                        cv = cv, n_jobs = -1)
+mean(output["test_f1_micro"])
+mean(output["test_f1_macro"])
+mean(output["test_precision"])
+mean(output["test_recall"])
+
+
+
+
+
+##### Logistic regression: rebalance data with over- and under-sampling -----------------------------------
+
+# Oversample minority class at 1:4 ratio, then undersample majority class at 1:2 ratio
+# This block of code does not influence models, and just shows how under-sampling works
+os = RandomOverSampler(sampling_strategy = 0.25)
+os_x, os_y = os.fit_resample(train_x, train_y)
+us = RandomUnderSampler(sampling_strategy = 0.5)
+ous_x, ous_y = us.fit_resample(os_x, os_y)
+print(Counter(train_y))
+print(Counter(os_y))
+print(Counter(ous_y))
+
+# Fit to training data and evaluate performance on test data (4:1 oversampling, 2:1 undersampling)
+# Find F-score, precision, and recall
+pipeline = Pipeline([("samp1", RandomOverSampler(sampling_strategy = 0.25)),
+                     ("samp2", RandomUnderSampler(sampling_strategy = 0.5)),
+                     ("model", LogisticRegression(solver = "lbfgs"))])
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "f1_macro", "recall", "precision"],
                         cv = cv, n_jobs = -1)
 mean(output["test_f1_micro"])
 mean(output["test_f1_macro"])
