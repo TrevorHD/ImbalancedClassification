@@ -16,6 +16,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_validate
 from sklearn.model_selection import RepeatedStratifiedKFold
 
 # Imports from other packages
@@ -23,6 +24,7 @@ import numpy
 import pandas
 import imblearn
 from numpy import sqrt
+from numpy import mean
 from numpy import argmax
 from numpy import arange
 from matplotlib import pyplot
@@ -84,6 +86,9 @@ pyplot.xlim([0, 5])
 pyplot.ylim([-6, 6])
 ax.legend()
 pyplot.show()
+
+
+
 
 
 ##### Fit discriminant analyses ---------------------------------------------------------------------------
@@ -344,4 +349,57 @@ pyplot.ylabel("Value")
 pyplot.legend(bbox_to_anchor = (0.72, 0.75, 0.1, 0.2))
 pyplot.show()
 pyplot.show()
+
+
+
+
+
+##### Logistic regression: rebalance data with over-sampling ----------------------------------------------
+
+# Fit to training data and evaluate performance on test data (no rebalancing)
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(LogisticRegression(solver = "lbfgs"), data_x, data_y,
+                        scoring = ["f1_micro", "recall", "precision"],
+                        cv = cv, n_jobs = -1)
+mean(output["test_f1_micro"])
+mean(output["test_precision"])
+mean(output["test_recall"])
+
+# Oversample minority class at 1:1 ratio
+os = RandomOverSampler(sampling_strategy = "minority")
+os_x, os_y = os.fit_resample(train_x, train_y)
+print(Counter(train_y))
+print(Counter(os_y))
+
+# Fit to training data and evaluate performance on test data (1:1 rebalancing)
+# Find F-score, precision, and recall
+pipeline = Pipeline([("samp", RandomOverSampler(sampling_strategy = "minority")),
+                     ("model", LogisticRegression(solver = "lbfgs"))])
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "recall", "precision"],
+                        cv = cv, n_jobs = -1)
+mean(output["test_f1_micro"])
+mean(output["test_precision"])
+mean(output["test_recall"])
+
+# Oversample minority class at 1:4 ratio
+os = RandomOverSampler(sampling_strategy = 0.25)
+os_x, os_y = os.fit_resample(train_x, train_y)
+print(Counter(train_y))
+print(Counter(os_y))
+
+# Fit to training data and evaluate performance on test data (4:1 rebalancing)
+# Find F-score, precision, and recall
+pipeline = Pipeline[("samp", RandomOverSampler(sampling_strategy = 0.25)),
+                    ("model", LogisticRegression(solver = "lbfgs"))]
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(pipeline, data_x, data_y, scoring = ["f1_micro", "recall", "precision"],
+                        cv = cv, n_jobs = -1)
+mean(output["test_f1_micro"])
+mean(output["test_precision"])
+mean(output["test_recall"])
+
+
+
+
 
