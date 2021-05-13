@@ -28,6 +28,7 @@ from numpy import mean
 from numpy import argmax
 from numpy import arange
 from matplotlib import pyplot
+from matplotlib import colors
 from collections import Counter
 from imblearn.pipeline import Pipeline
 from imblearn.over_sampling import RandomOverSampler
@@ -51,41 +52,35 @@ data = numpy.column_stack((data_x, data_y))
 train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, test_size = 0.5,
                                                     random_state = 2, stratify = data_y)
 
+# Set colour map for scatterplots
+cmap = colors.ListedColormap(["blue", "red"])
+bounds = [0, 0.5, 1]
+norm = colors.BoundaryNorm(bounds, cmap.N)
+
+# Plot training and test data separately
+fig = pyplot.figure()
+pyplot.subplot(2, 2, 1)
+pyplot.scatter(train_x[:, 0], train_x[:, 1], c = train_y, cmap = cmap, norm = norm, alpha = 0.3)
+pyplot.xlabel("X1")
+pyplot.ylabel("X2")
+pyplot.xlim([0, 5])
+pyplot.ylim([-6, 6])
+pyplot.subplot(2, 2, 2)
+scatter = pyplot.scatter(test_x[:, 0], test_x[:, 1], c = test_y, cmap = cmap, norm = norm, alpha = 0.3)
+pyplot.xlabel("X1")
+pyplot.xlim([0, 5])
+pyplot.ylim([-6, 6])
+pyplot.legend(*scatter.legend_elements(), fontsize = 7)
+pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
+pyplot.show()
+
 # Plot full data
-fig, ax = pyplot.subplots()
-for g in numpy.unique(data_y):
-    i = numpy.where(data_y == g)
-    ax.scatter(data_x[:, 0][i], data_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
+pyplot.scatter(data_x[:, 0], data_x[:, 1], c = data_y, cmap = cmap, norm = norm, alpha = 0.3)
 pyplot.xlabel("X1")
 pyplot.ylabel("X2")
 pyplot.xlim([0, 5])
 pyplot.ylim([-6, 6])
-ax.legend()
-pyplot.show()
-
-# Plot training data
-fig, ax = pyplot.subplots()
-for g in numpy.unique(train_y):
-    i = numpy.where(train_y == g)
-    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-pyplot.xlabel("X1")
-pyplot.ylabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
-pyplot.show()
-
-# Plot test data
-fig, ax = pyplot.subplots()
-for g in numpy.unique(test_y):
-    i = numpy.where(test_y == g)
-    ax.scatter(test_x[:, 0][i], test_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-pyplot.xlabel("X1")
-pyplot.ylabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
-pyplot.show()
+pyplot.legend(*scatter.legend_elements(), fontsize = 10)
 
 
 
