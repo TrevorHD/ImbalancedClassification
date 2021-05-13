@@ -172,8 +172,25 @@ pyplot.ylim([-6, 6])
 ax.legend()
 pyplot.show()
 
+# Same as above, but with 100:1 cost for correctly detecting minority cases
+clfLinC = svm.SVC(gamma = "auto", kernel = "linear", class_weight = {0:1, 1:100})
+clfLinC.fit(train_x, train_y)
+fig, ax = pyplot.subplots()
+X0, X1 = train_x[:, 0], train_x[:, 1]
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfLinC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+for g in numpy.unique(train_y):
+    i = numpy.where(train_y == g)
+    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
+ax.set_ylabel("X1")
+ax.set_xlabel("X2")
+pyplot.xlim([0, 5])
+pyplot.ylim([-6, 6])
+ax.legend()
+pyplot.show()
+
 # Fit SVM with quadratic kernel on training data; plot decision boundary
-clf2dg = svm.NuSVC(nu = 0.009, gamma = "auto", kernel = "poly", degree = 2)
+clf2dg = svm.SVC(gamma = "auto", kernel = "poly", degree = 2)
 clf2dg.fit(train_x, train_y)
 fig, ax = pyplot.subplots()
 X0, X1 = train_x[:, 0], train_x[:, 1]
@@ -189,8 +206,25 @@ pyplot.ylim([-6, 6])
 ax.legend()
 pyplot.show()
 
+# Same as above, but with 100:1 cost for correctly detecting minority cases
+clf2dgC = svm.SVC(gamma = "auto", kernel = "poly", degree = 2, class_weight = {0:1, 1:100})
+clf2dgC.fit(train_x, train_y)
+fig, ax = pyplot.subplots()
+X0, X1 = train_x[:, 0], train_x[:, 1]
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clf2dgC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+for g in numpy.unique(train_y):
+    i = numpy.where(train_y == g)
+    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
+ax.set_ylabel("X1")
+ax.set_xlabel("X2")
+pyplot.xlim([0, 5])
+pyplot.ylim([-6, 6])
+ax.legend()
+pyplot.show()
+
 # Fit SVM with cubic kernel on training data; plot decision boundary
-clf3dg = svm.NuSVC(nu = 0.009, gamma = "auto", kernel = "poly", degree = 3)
+clf3dg = svm.SVC(gamma = "auto", kernel = "poly", degree = 3)
 clf3dg.fit(train_x, train_y)
 fig, ax = pyplot.subplots()
 X0, X1 = train_x[:, 0], train_x[:, 1]
@@ -206,8 +240,25 @@ pyplot.ylim([-6, 6])
 ax.legend()
 pyplot.show()
 
+# Same as above, but with 100:1 cost for correctly detecting minority cases
+clf3dgC = svm.SVC(gamma = "auto", kernel = "poly", degree = 3, class_weight = {0:1, 1:100})
+clf3dgC.fit(train_x, train_y)
+fig, ax = pyplot.subplots()
+X0, X1 = train_x[:, 0], train_x[:, 1]
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clf3dgC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+for g in numpy.unique(train_y):
+    i = numpy.where(train_y == g)
+    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
+ax.set_ylabel("X1")
+ax.set_xlabel("X2")
+pyplot.xlim([0, 5])
+pyplot.ylim([-6, 6])
+ax.legend()
+pyplot.show()
+
 # Fit SVM with radial kernel on training data; plot decision boundary
-clfRbf = svm.NuSVC(nu = 0.009, gamma = "auto", kernel = "rbf")
+clfRbf = svm.SVC(gamma = "auto", kernel = "rbf")
 clfRbf.fit(train_x, train_y)
 fig, ax = pyplot.subplots()
 X0, X1 = train_x[:, 0], train_x[:, 1]
@@ -223,13 +274,30 @@ pyplot.ylim([-6, 6])
 ax.legend()
 pyplot.show()
 
-# Print F-scores; linear and radial kernels are best
+# Same as above, but with 100:1 cost for correctly detecting minority cases
+clfRbfC = svm.SVC(gamma = "auto", kernel = "rbf", class_weight = {0:1, 1:100})
+clfRbfC.fit(train_x, train_y)
+fig, ax = pyplot.subplots()
+X0, X1 = train_x[:, 0], train_x[:, 1]
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfRbfC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+for g in numpy.unique(train_y):
+    i = numpy.where(train_y == g)
+    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
+ax.set_ylabel("X1")
+ax.set_xlabel("X2")
+pyplot.xlim([0, 5])
+pyplot.ylim([-6, 6])
+ax.legend()
+pyplot.show()
+
+# Print F-scores for cost-insensitive models; linear and radial kernels are best
 print(metrics.f1_score(train_y, clfLin.predict(train_x)))
 print(metrics.f1_score(train_y, clf2dg.predict(train_x)))
 print(metrics.f1_score(train_y, clf3dg.predict(train_x)))
 print(metrics.f1_score(train_y, clfRbf.predict(train_x)))
 
-# Print AUPRC; linear and radial kernels are best
+# Print AUPRC for cost-insensitive models; linear and radial kernels are best
 precision, recall, _ = precision_recall_curve(train_y, clfLin.predict(train_x))
 print(auc(recall, precision))
 precision, recall, _ = precision_recall_curve(train_y, clf2dg.predict(train_x))
@@ -237,6 +305,22 @@ print(auc(recall, precision))
 precision, recall, _ = precision_recall_curve(train_y, clf3dg.predict(train_x))
 print(auc(recall, precision))
 precision, recall, _ = precision_recall_curve(train_y, clfRbf.predict(train_x))
+print(auc(recall, precision))
+
+# Print F-scores for cost-sensitive models; linear and radial kernels are best
+print(metrics.f1_score(train_y, clfLinC.predict(train_x)))
+print(metrics.f1_score(train_y, clf2dgC.predict(train_x)))
+print(metrics.f1_score(train_y, clf3dgC.predict(train_x)))
+print(metrics.f1_score(train_y, clfRbfC.predict(train_x)))
+
+# Print AUPRC for cost-sensitive models; linear and radial kernels are best
+precision, recall, _ = precision_recall_curve(train_y, clfLinC.predict(train_x))
+print(auc(recall, precision))
+precision, recall, _ = precision_recall_curve(train_y, clf2dgC.predict(train_x))
+print(auc(recall, precision))
+precision, recall, _ = precision_recall_curve(train_y, clf3dgC.predict(train_x))
+print(auc(recall, precision))
+precision, recall, _ = precision_recall_curve(train_y, clfRbfC.predict(train_x))
 print(auc(recall, precision))
 
 # Evaluate performance of linear kernel on test data
