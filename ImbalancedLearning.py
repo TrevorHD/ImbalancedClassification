@@ -57,30 +57,28 @@ cmap = colors.ListedColormap(["blue", "red"])
 bounds = [0, 0.5, 1]
 norm = colors.BoundaryNorm(bounds, cmap.N)
 
+# Function to scatterplot data
+def scatterRaw(d_x, d_y, fontsize = 10, legend = True, x2lab = True):
+    scatter = pyplot.scatter(d_x[:, 0], d_x[:, 1], c = d_y, cmap = cmap, norm = norm, alpha = 0.3)
+    pyplot.xlabel("X1")
+    if x2lab == True:
+        pyplot.ylabel("X2")
+    pyplot.xlim([0, 5])
+    pyplot.ylim([-6, 6])
+    if legend == True:
+        pyplot.legend(*scatter.legend_elements(), fontsize = fontsize)
+
 # Plot training and test data separately
 fig = pyplot.figure()
 pyplot.subplot(2, 2, 1)
-pyplot.scatter(train_x[:, 0], train_x[:, 1], c = train_y, cmap = cmap, norm = norm, alpha = 0.3)
-pyplot.xlabel("X1")
-pyplot.ylabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
+scatterRaw(d_x = train_x, d_y = train_y, legend = False)
 pyplot.subplot(2, 2, 2)
-scatter = pyplot.scatter(test_x[:, 0], test_x[:, 1], c = test_y, cmap = cmap, norm = norm, alpha = 0.3)
-pyplot.xlabel("X1")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-pyplot.legend(*scatter.legend_elements(), fontsize = 7)
+scatterRaw(d_x = test_x, d_y = test_y, fontsize = 7, x2lab = False)
 pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.show()
 
 # Plot full data
-pyplot.scatter(data_x[:, 0], data_x[:, 1], c = data_y, cmap = cmap, norm = norm, alpha = 0.3)
-pyplot.xlabel("X1")
-pyplot.ylabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-pyplot.legend(*scatter.legend_elements(), fontsize = 10)
+scatterRaw(d_x = data_x, d_y = data_y)
 
 
 
