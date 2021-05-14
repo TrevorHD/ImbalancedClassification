@@ -12,17 +12,15 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import auc
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LogisticRegressionCV
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 # Imports from other packages
 import numpy
-import pandas
-import imblearn
 from numpy import sqrt
 from numpy import mean
 from numpy import argmax
@@ -70,9 +68,9 @@ def plot_scatter(d_x, d_y, fontsize = 10, legend = True, x2lab = True, loc = "up
 
 # Plot training and test data separately
 fig = pyplot.figure()
-pyplot.subplot(2, 2, 1)
+pyplot.subplot(1, 2, 1)
 plot_scatter(d_x = train_x, d_y = train_y, legend = False)
-pyplot.subplot(2, 2, 2)
+pyplot.subplot(1, 2, 2)
 plot_scatter(d_x = test_x, d_y = test_y, fontsize = 7, x2lab = False)
 pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.show()
@@ -87,7 +85,7 @@ plot_scatter(d_x = data_x, d_y = data_y)
 ##### Fit discriminant analyses ---------------------------------------------------------------------------
 
 # Define functions for plotting contours and decision boundary
-def plot_meshpoints(x, y, h = .02):
+def plot_meshpoints(x, y, h = 0.02):
     x_min, x_max = x.min() - 2, x.max() + 2
     y_min, y_max = y.min() - 2, y.max() + 2
     xx, yy = numpy.meshgrid(numpy.arange(x_min, x_max, h), numpy.arange(y_min, y_max, h))
@@ -106,11 +104,11 @@ clfQDA.fit(train_x, train_y)
 
 # Plot LDA and QDA decision boundaries on top of training data
 fig = pyplot.figure()
-ax = pyplot.subplot(2, 2, 1)
+ax = pyplot.subplot(1, 2, 1)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clfLDA, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
 plot_scatter(d_x = train_x, d_y = train_y, legend = False)
-ax = pyplot.subplot(2, 2, 2)
+ax = pyplot.subplot(1, 2, 2)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clfQDA, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
 plot_scatter(d_x = train_x, d_y = train_y, fontsize = 7, x2lab = False)
@@ -133,140 +131,62 @@ print(auc(recall, precision))
 
 ##### Fit support vector machines -------------------------------------------------------------------------
 
-# Fit SVM with linear kernel on training data; plot decision boundary
+# Fit SVM with linear, polynomial (2 and 3), and radial kernels on training data
 clfLin = svm.SVC(gamma = "auto", kernel = "linear")
 clfLin.fit(train_x, train_y)
-fig, ax = pyplot.subplots()
-X0, X1 = train_x[:, 0], train_x[:, 1]
-xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, clfLin, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(train_y):
-    i = numpy.where(train_y == g)
-    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-ax.set_ylabel("X1")
-ax.set_xlabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
-pyplot.show()
+clf2dg = svm.SVC(gamma = "auto", kernel = "poly", degree = 2)
+clf2dg.fit(train_x, train_y)
+clf3dg = svm.SVC(gamma = "auto", kernel = "poly", degree = 3)
+clf3dg.fit(train_x, train_y)
+clfRbf = svm.SVC(gamma = "auto", kernel = "rbf")
+clfRbf.fit(train_x, train_y)
 
 # Same as above, but with 100:1 cost for correctly detecting minority cases
 clfLinC = svm.SVC(gamma = "auto", kernel = "linear", class_weight = {0:1, 1:100})
 clfLinC.fit(train_x, train_y)
-fig, ax = pyplot.subplots()
-X0, X1 = train_x[:, 0], train_x[:, 1]
-xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, clfLinC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(train_y):
-    i = numpy.where(train_y == g)
-    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-ax.set_ylabel("X1")
-ax.set_xlabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
-pyplot.show()
-
-# Fit SVM with quadratic kernel on training data; plot decision boundary
-clf2dg = svm.SVC(gamma = "auto", kernel = "poly", degree = 2)
-clf2dg.fit(train_x, train_y)
-fig, ax = pyplot.subplots()
-X0, X1 = train_x[:, 0], train_x[:, 1]
-xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, clf2dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(train_y):
-    i = numpy.where(train_y == g)
-    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-ax.set_ylabel("X1")
-ax.set_xlabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
-pyplot.show()
-
-# Same as above, but with 100:1 cost for correctly detecting minority cases
 clf2dgC = svm.SVC(gamma = "auto", kernel = "poly", degree = 2, class_weight = {0:1, 1:100})
 clf2dgC.fit(train_x, train_y)
-fig, ax = pyplot.subplots()
-X0, X1 = train_x[:, 0], train_x[:, 1]
-xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, clf2dgC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(train_y):
-    i = numpy.where(train_y == g)
-    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-ax.set_ylabel("X1")
-ax.set_xlabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
-pyplot.show()
-
-# Fit SVM with cubic kernel on training data; plot decision boundary
-clf3dg = svm.SVC(gamma = "auto", kernel = "poly", degree = 3)
-clf3dg.fit(train_x, train_y)
-fig, ax = pyplot.subplots()
-X0, X1 = train_x[:, 0], train_x[:, 1]
-xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, clf3dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(train_y):
-    i = numpy.where(train_y == g)
-    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-ax.set_ylabel("X1")
-ax.set_xlabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
-pyplot.show()
-
-# Same as above, but with 100:1 cost for correctly detecting minority cases
 clf3dgC = svm.SVC(gamma = "auto", kernel = "poly", degree = 3, class_weight = {0:1, 1:100})
 clf3dgC.fit(train_x, train_y)
-fig, ax = pyplot.subplots()
-X0, X1 = train_x[:, 0], train_x[:, 1]
-xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, clf3dgC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(train_y):
-    i = numpy.where(train_y == g)
-    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-ax.set_ylabel("X1")
-ax.set_xlabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
-pyplot.show()
-
-# Fit SVM with radial kernel on training data; plot decision boundary
-clfRbf = svm.SVC(gamma = "auto", kernel = "rbf")
-clfRbf.fit(train_x, train_y)
-fig, ax = pyplot.subplots()
-X0, X1 = train_x[:, 0], train_x[:, 1]
-xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, clfRbf, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(train_y):
-    i = numpy.where(train_y == g)
-    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-ax.set_ylabel("X1")
-ax.set_xlabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
-pyplot.show()
-
-# Same as above, but with 100:1 cost for correctly detecting minority cases
 clfRbfC = svm.SVC(gamma = "auto", kernel = "rbf", class_weight = {0:1, 1:100})
 clfRbfC.fit(train_x, train_y)
-fig, ax = pyplot.subplots()
-X0, X1 = train_x[:, 0], train_x[:, 1]
+
+# Plot SVM decision boundaries on top of training data
+# Left column is cost-insensitive, right is cost-sensitive
+fig = pyplot.figure()
+ax = pyplot.subplot(4, 2, 1)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfLin, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, legend = False)
+ax = pyplot.subplot(4, 2, 2)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfLinC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, fontsize = 7, x2lab = False)
+ax = pyplot.subplot(4, 2, 3)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clf2dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, legend = False)
+ax = pyplot.subplot(4, 2, 4)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clf2dgC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, legend = False, x2lab = False)
+ax = pyplot.subplot(4, 2, 5)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clf3dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, legend = False)
+ax = pyplot.subplot(4, 2, 6)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clf3dgC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, legend = False, x2lab = False)
+ax = pyplot.subplot(4, 2, 7)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfRbf, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, legend = False)
+ax = pyplot.subplot(4, 2, 8)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clfRbfC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(train_y):
-    i = numpy.where(train_y == g)
-    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-ax.set_ylabel("X1")
-ax.set_xlabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
+plot_scatter(d_x = train_x, d_y = train_y, legend = False, x2lab = False)
+pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.show()
 
 # Print F-scores for cost-insensitive models; linear and radial kernels are best
