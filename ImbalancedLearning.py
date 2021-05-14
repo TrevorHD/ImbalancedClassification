@@ -57,8 +57,8 @@ cmap = colors.ListedColormap(["blue", "red"])
 bounds = [0, 0.5, 1]
 norm = colors.BoundaryNorm(bounds, cmap.N)
 
-# Function to scatterplot data
-def scatterRaw(d_x, d_y, fontsize = 10, legend = True, x2lab = True):
+# Define function to scatterplot data
+def plot_scatter(d_x, d_y, fontsize = 10, legend = True, x2lab = True, loc = "upper right"):
     scatter = pyplot.scatter(d_x[:, 0], d_x[:, 1], c = d_y, cmap = cmap, norm = norm, alpha = 0.3)
     pyplot.xlabel("X1")
     if x2lab == True:
@@ -66,19 +66,19 @@ def scatterRaw(d_x, d_y, fontsize = 10, legend = True, x2lab = True):
     pyplot.xlim([0, 5])
     pyplot.ylim([-6, 6])
     if legend == True:
-        pyplot.legend(*scatter.legend_elements(), fontsize = fontsize)
+        pyplot.legend(*scatter.legend_elements(), fontsize = fontsize, loc = loc)
 
 # Plot training and test data separately
 fig = pyplot.figure()
 pyplot.subplot(2, 2, 1)
-scatterRaw(d_x = train_x, d_y = train_y, legend = False)
+plot_scatter(d_x = train_x, d_y = train_y, legend = False)
 pyplot.subplot(2, 2, 2)
-scatterRaw(d_x = test_x, d_y = test_y, fontsize = 7, x2lab = False)
+plot_scatter(d_x = test_x, d_y = test_y, fontsize = 7, x2lab = False)
 pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.show()
 
 # Plot full data
-scatterRaw(d_x = data_x, d_y = data_y)
+plot_scatter(d_x = data_x, d_y = data_y)
 
 
 
@@ -87,7 +87,7 @@ scatterRaw(d_x = data_x, d_y = data_y)
 ##### Fit discriminant analyses ---------------------------------------------------------------------------
 
 # Define functions for plotting contours and decision boundary
-def plot_meshpoints(x, y, h=.02):
+def plot_meshpoints(x, y, h = .02):
     x_min, x_max = x.min() - 2, x.max() + 2
     y_min, y_max = y.min() - 2, y.max() + 2
     xx, yy = numpy.meshgrid(numpy.arange(x_min, x_max, h), numpy.arange(y_min, y_max, h))
@@ -98,38 +98,23 @@ def plot_contours(ax, clf, xx, yy, **params):
     out = ax.contourf(xx, yy, Z, **params)
     return out
 
-# Fit LDA on training data; plot decision boundary
+# Fit LDA and QDA on training data
 clfLDA = LinearDiscriminantAnalysis()
 clfLDA.fit(train_x, train_y)
-fig, ax = pyplot.subplots()
-X0, X1 = train_x[:, 0], train_x[:, 1]
-xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
-plot_contours(ax, clfLDA, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(train_y):
-    i = numpy.where(train_y == g)
-    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-ax.set_ylabel("X1")
-ax.set_xlabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
-pyplot.show()
-
-# Fit QDA on training data; plot decision boundary
 clfQDA = QuadraticDiscriminantAnalysis()
 clfQDA.fit(train_x, train_y)
-fig, ax = pyplot.subplots()
-X0, X1 = train_x[:, 0], train_x[:, 1]
+
+# Plot LDA and QDA decision boundaries on top of training data
+fig = pyplot.figure()
+ax = pyplot.subplot(2, 2, 1)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfLDA, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, legend = False)
+ax = pyplot.subplot(2, 2, 2)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clfQDA, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-for g in numpy.unique(train_y):
-    i = numpy.where(train_y == g)
-    ax.scatter(train_x[:, 0][i], train_x[:, 1][i], c = ["blue", "red"][g], label = ["0", "1"][g], alpha = 0.3)
-ax.set_ylabel("X1")
-ax.set_xlabel("X2")
-pyplot.xlim([0, 5])
-pyplot.ylim([-6, 6])
-ax.legend()
+plot_scatter(d_x = train_x, d_y = train_y, fontsize = 7, x2lab = False)
+pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.show()
 
 # Print F-scores; linear kernel is better
