@@ -103,6 +103,8 @@ def plot_contours(ax, clf, xx, yy, **params):
     out = ax.contourf(xx, yy, Z, **params)
     return out
 
+# Compare models using single validation set approach
+
 # Fit LDA and QDA on training data
 clfLDA = LinearDiscriminantAnalysis()
 clfLDA.fit(train_x, train_y)
@@ -132,11 +134,42 @@ print(auc(recall, precision))
 precision, recall, _ = precision_recall_curve(train_y, clfQDA.predict(train_x))
 print(auc(recall, precision))
 
+# Evaluate linear kernel performance on test data
+metrics.confusion_matrix(test_y, clfLDA.predict(test_x))
+print(metrics.f1_score(test_y, clfLDA.predict(test_x)))
+precision, recall, _ = precision_recall_curve(test_y, clfLDA.predict(test_x))
+print(auc(recall, precision))
+
+# Compare models using cross-validation approach
+
+# Split data into training and test; fit LDA to training, calculate stats on test data
+# Repeat this 1000 times; 50/50 test/train split
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(LinearDiscriminantAnalysis(), data_x, data_y, cv = cv, n_jobs = -1,
+                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
+mean(output["test_f1_micro"])
+mean(output["test_f1_macro"])
+mean(output["test_precision"])
+mean(output["test_recall"])
+
+# Split data into training and test; fit QDA to training, calculate stats on test data
+# Repeat this 1000 times; 50/50 test/train split
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(QuadraticDiscriminantAnalysis(), data_x, data_y, cv = cv, n_jobs = -1,
+                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
+mean(output["test_f1_micro"])
+mean(output["test_f1_macro"])
+mean(output["test_precision"])
+mean(output["test_recall"])
+
+# For now, we are assuming that no class is more "important" than the other
+# Thus, we can compare micro average and find that the linear model performs better
 
 
 
 
-##### Fit support vector machines -------------------------------------------------------------------------
+
+##### Fit support vector machines (cost-insensitive and cost-sensitive) -----------------------------------
 
 # Fit SVM with linear, polynomial (2 and 3), and radial kernels on training data
 clfLin = svm.SVC(gamma = "auto", kernel = "linear")
