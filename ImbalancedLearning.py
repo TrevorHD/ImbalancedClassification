@@ -56,15 +56,21 @@ bounds = [0, 0.5, 1]
 norm = colors.BoundaryNorm(bounds, cmap.N)
 
 # Define function to scatterplot data
-def plot_scatter(d_x, d_y, fontsize = 10, legend = True, x2lab = True, loc = "upper right"):
-    scatter = pyplot.scatter(d_x[:, 0], d_x[:, 1], c = d_y, cmap = cmap, norm = norm, alpha = 0.3)
-    pyplot.xlabel("X1")
+def plot_scatter(d_x, d_y, fontsize = 10, legend = True, x1lab = True, x2lab = True, loc = "upper left"):
+    scatter = pyplot.scatter(d_x[:, 0], d_x[:, 1], c = d_y, cmap = cmap, norm = norm,
+                             alpha = 0.3, s = 20, marker = ".", edgecolors = "none")
+    if x1lab == True:
+        pyplot.xlabel("X1", fontsize = 5)
     if x2lab == True:
-        pyplot.ylabel("X2")
+        pyplot.ylabel("X2", fontsize = 5)
     pyplot.xlim([0, 5])
     pyplot.ylim([-6, 6])
+    pyplot.xticks(fontsize = 4)
+    pyplot.yticks(fontsize = 4)
+    pyplot.tick_params(length = 2, width = 0.5)
     if legend == True:
-        pyplot.legend(*scatter.legend_elements(), fontsize = fontsize, loc = loc)
+        pyplot.legend(*scatter.legend_elements(), fontsize = fontsize, loc = loc,
+                      markerscale = 0.3, handletextpad = 0.1, handlelength = 1)
 
 # Plot training and test data separately
 fig = pyplot.figure()
@@ -153,31 +159,31 @@ clfRbfC.fit(train_x, train_y)
 
 # Plot SVM decision boundaries on top of training data
 # Left column is cost-insensitive, right is cost-sensitive
-fig = pyplot.figure()
+fig = pyplot.figure(figsize = (3, 4), dpi = 800)
 ax = pyplot.subplot(4, 2, 1)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clfLin, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-plot_scatter(d_x = train_x, d_y = train_y, legend = False)
+plot_scatter(d_x = train_x, d_y = train_y, x1lab = False, fontsize = 4)
 ax = pyplot.subplot(4, 2, 2)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clfLinC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-plot_scatter(d_x = train_x, d_y = train_y, fontsize = 7, x2lab = False)
+plot_scatter(d_x = train_x, d_y = train_y, x1lab = False, x2lab = False, legend = False)
 ax = pyplot.subplot(4, 2, 3)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clf2dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-plot_scatter(d_x = train_x, d_y = train_y, legend = False)
+plot_scatter(d_x = train_x, d_y = train_y, x1lab = False, legend = False)
 ax = pyplot.subplot(4, 2, 4)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clf2dgC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-plot_scatter(d_x = train_x, d_y = train_y, legend = False, x2lab = False)
+plot_scatter(d_x = train_x, d_y = train_y, x1lab = False, x2lab = False, legend = False)
 ax = pyplot.subplot(4, 2, 5)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clf3dg, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-plot_scatter(d_x = train_x, d_y = train_y, legend = False)
+plot_scatter(d_x = train_x, d_y = train_y, x1lab = False, legend = False)
 ax = pyplot.subplot(4, 2, 6)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clf3dgC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-plot_scatter(d_x = train_x, d_y = train_y, legend = False, x2lab = False)
+plot_scatter(d_x = train_x, d_y = train_y, x1lab = False, x2lab = False, legend = False)
 ax = pyplot.subplot(4, 2, 7)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clfRbf, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
@@ -185,9 +191,9 @@ plot_scatter(d_x = train_x, d_y = train_y, legend = False)
 ax = pyplot.subplot(4, 2, 8)
 xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
 plot_contours(ax, clfRbfC, xx, yy, cmap = pyplot.cm.coolwarm, alpha = 0.4)
-plot_scatter(d_x = train_x, d_y = train_y, legend = False, x2lab = False)
+plot_scatter(d_x = train_x, d_y = train_y, x2lab = False, legend = False)
 pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
-pyplot.show()
+pyplot.savefig("Plot_SVM.jpeg", dpi = 800, facecolor = "white")
 
 # Print F-scores for cost-insensitive models; linear and radial kernels are best
 print(metrics.f1_score(train_y, clfLin.predict(train_x)))
