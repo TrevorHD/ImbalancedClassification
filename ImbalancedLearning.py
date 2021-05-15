@@ -145,25 +145,25 @@ print(metrics.confusion_matrix(test_y, clfLDA.predict(test_x)))
 
 # Compare models using cross-validation approach
 
+# Create function to run cross-validation and output various statistics
+# Split data into training and test; fit model to training data, calculate stats on test data
+# Repeat this n_repeats times with 50/50 test/train split
+def model_cv(mod, n_repeats):
+    cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = n_repeats, random_state = 32463)
+    output = cross_validate(mod, data_x, data_y, cv = cv, n_jobs = -1,
+                            scoring = ["f1_micro", "f1_macro", "recall", "precision"])
+    print("F1-Micro: ", mean(output["test_f1_micro"]))
+    print("F1-Macro: ", mean(output["test_f1_macro"]))
+    print("Precision: ", mean(output["test_precision"]))
+    print("Recall: ", mean(output["test_recall"]))
+
 # Split data into training and test; fit LDA to training, calculate stats on test data
 # Repeat this 1000 times; 50/50 test/train split
-cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(clfLDA, data_x, data_y, cv = cv, n_jobs = -1,
-                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-print(mean(output["test_f1_micro"]))
-print(mean(output["test_f1_macro"]))
-print(mean(output["test_precision"]))
-print(mean(output["test_recall"]))
+model_cv(clfLDA, 1000)
 
 # Split data into training and test; fit QDA to training, calculate stats on test data
 # Repeat this 1000 times; 50/50 test/train split
-cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(clfQDA, data_x, data_y, cv = cv, n_jobs = -1,
-                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-print(mean(output["test_f1_micro"]))
-print(mean(output["test_f1_macro"]))
-print(mean(output["test_precision"]))
-print(mean(output["test_recall"]))
+model_cv(clfQDA, 1000)
 
 # Again, we are assuming that no class is more "important" than the other
 # Thus, we can compare micro average and find that the linear model performs better
@@ -235,49 +235,13 @@ pyplot.savefig("Plot_SVM.jpeg", dpi = 800, facecolor = "white")
 # Compare models using cross-validation approach
 # For now, we are assuming that no class is more "important" than the other
 
-# Split data into training and test; fit unweighted linear kernel to training
-# Then calculate stats on test data
-# Repeat this 1000 times; 50/50 test/train split
-cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(clfLin, data_x, data_y, cv = cv, n_jobs = -1,
-                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-print(mean(output["test_f1_micro"]))
-print(mean(output["test_f1_macro"]))
-print(mean(output["test_precision"]))
-print(mean(output["test_recall"]))
-
-# Split data into training and test; fit unweighted polynomial (2) kernel to training
-# Then calculate stats on test data
-# Repeat this 1000 times; 50/50 test/train split
-cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(clf2dg, data_x, data_y, cv = cv, n_jobs = -1,
-                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-print(mean(output["test_f1_micro"]))
-print(mean(output["test_f1_macro"]))
-print(mean(output["test_precision"]))
-print(mean(output["test_recall"]))
-
-# Split data into training and test; fit unweighted polynomial (3) kernel to training
-# Then calculate stats on test data
-# Repeat this 1000 times; 50/50 test/train split
-cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(clf3dg, data_x, data_y, cv = cv, n_jobs = -1,
-                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-print(mean(output["test_f1_micro"]))
-print(mean(output["test_f1_macro"]))
-print(mean(output["test_precision"]))
-print(mean(output["test_recall"]))
-
-# Split data into training and test; fit unweighted radial kernel to training
-# Then calculate stats on test data
-# Repeat this 1000 times; 50/50 test/train split
-cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(clfRbf, data_x, data_y, cv = cv, n_jobs = -1,
-                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-print(mean(output["test_f1_micro"]))
-print(mean(output["test_f1_macro"]))
-print(mean(output["test_precision"]))
-print(mean(output["test_recall"]))
+# Split data into training and test and fit SVM, then calculate stats on test data
+# Repeat this 1000 times with 50/50 test/train split
+# Do this for linear kernel, polynomial (2 and 3 degree), and radial kernels
+model_cv(clfLin, 1000)
+model_cv(clf2dg, 1000)
+model_cv(clf3dg, 1000)
+model_cv(clfRbf, 1000)
 
 # Again, we are assuming that no class is more "important" than the other
 # Thus, we can compare micro average and find that the polynomial (2) kernel performs best
@@ -285,49 +249,14 @@ print(mean(output["test_recall"]))
 # Now, we assume that the "importance" of the minority class is 100:1
 # A weighted model would incur a heavy penalty for misclassifying a minority class
 
-# Split data into training and test; fit weighted linear kernel to training
-# Then calculate stats on test data
-# Repeat this 1000 times; 50/50 test/train split
-cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 500, random_state = 32463)
-output = cross_validate(clfLinC, data_x, data_y, cv = cv, n_jobs = -1,
-                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-print(mean(output["test_f1_micro"]))
-print(mean(output["test_f1_macro"]))
-print(mean(output["test_precision"]))
-print(mean(output["test_recall"]))
-
-# Split data into training and test; fit weighted polynomial (2) kernel to training
-# Then calculate stats on test data
-# Repeat this 1000 times; 50/50 test/train split
-cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 500, random_state = 32463)
-output = cross_validate(clf2dgC, data_x, data_y, cv = cv, n_jobs = -1,
-                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-print(mean(output["test_f1_micro"]))
-print(mean(output["test_f1_macro"]))
-print(mean(output["test_precision"]))
-print(mean(output["test_recall"]))
-
-# Split data into training and test; fit weighted polynomial (3) kernel to training
-# Then calculate stats on test data
-# Repeat this 1000 times; 50/50 test/train split
-cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 500, random_state = 32463)
-output = cross_validate(clf3dgC, data_x, data_y, cv = cv, n_jobs = -1,
-                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-print(mean(output["test_f1_micro"]))
-print(mean(output["test_f1_macro"]))
-print(mean(output["test_precision"]))
-print(mean(output["test_recall"]))
-
-# Split data into training and test; fit weighted radial kernel to training
-# Then calculate stats on test data
-# Repeat this 1000 times; 50/50 test/train split
-cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 500, random_state = 32463)
-output = cross_validate(clfRbfC, data_x, data_y, cv = cv, n_jobs = -1,
-                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-print(mean(output["test_f1_micro"]))
-print(mean(output["test_f1_macro"]))
-print(mean(output["test_precision"]))
-print(mean(output["test_recall"]))
+# Split data into training and test and fit SVM, then calculate stats on test data
+# Repeat this 1000 times with 50/50 test/train split and 100:1 weight on minority class
+# Do this for linear kernel, polynomial (2 and 3 degree), and radial kernels
+# Reduce reps to 500 since this is more computationally expensive
+model_cv(clfLinC, 500)
+model_cv(clf2dgC, 500)
+model_cv(clf3dgC, 500)
+model_cv(clfRbfC, 500)
 
 
 
