@@ -4,12 +4,14 @@
 from sklearn import metrics
 from sklearn import svm
 from sklearn.dummy import DummyClassifier
+from sklearn.metrics import make_scorer
 from sklearn.datasets import make_classification
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import auc
+from sklearn.metrics import balanced_accuracy_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
@@ -21,6 +23,7 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 # Imports from other packages
 import numpy
+from pandas import *
 from numpy import sqrt
 from numpy import mean
 from numpy import argmax
@@ -148,25 +151,25 @@ print(metrics.confusion_matrix(test_y, clfLDA.predict(test_x)))
 # Create function to run cross-validation and output various statistics
 # Split data into training and test; fit model to training data, calculate stats on test data
 # Repeat this n_repeats times with 50/50 test/train split
-def model_cv(mod, n_repeats):
+def model_cv(mod, n_repeats, metList):
     cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = n_repeats, random_state = 32463)
-    output = cross_validate(mod, data_x, data_y, cv = cv, n_jobs = -1,
-                            scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-    print("F1-Micro: ", mean(output["test_f1_micro"]))
-    print("F1-Macro: ", mean(output["test_f1_macro"]))
-    print("Precision: ", mean(output["test_precision"]))
-    print("Recall: ", mean(output["test_recall"]))
-
+    output = cross_validate(mod, data_x, data_y, cv = cv, scoring = metList, n_jobs = -1)
+    df = DataFrame(columns = ["metric", "value"])
+    for i in metList:
+        newdat = DataFrame({"metric":[i], "value":[mean(output["test_" + i])]})
+        df = df.append(newdat, ignore_index = True)
+    print(df)
+    
 # Split data into training and test; fit LDA to training, calculate stats on test data
 # Repeat this 1000 times; 50/50 test/train split
-model_cv(clfLDA, 1000)
+model_cv(clfLDA, 1000, ["f1_micro", "f1_weighted"])
 
 # Split data into training and test; fit QDA to training, calculate stats on test data
 # Repeat this 1000 times; 50/50 test/train split
-model_cv(clfQDA, 1000)
+model_cv(clfQDA, 1000, ["f1_micro", "f1_weighted"])
 
 # Again, we are assuming that no class is more "important" than the other
-# Thus, we can compare micro average and find that the linear model performs better
+# Thus, we can compare F1 micro average and find that the linear model performs better
 
 
 
@@ -184,14 +187,14 @@ clf3dg.fit(train_x, train_y)
 clfRbf = svm.SVC(gamma = "auto", kernel = "rbf")
 clfRbf.fit(train_x, train_y)
 
-# Same as above, but with 100:1 cost for correctly detecting minority cases
-clfLinC = svm.SVC(gamma = "auto", kernel = "linear", class_weight = {0:1, 1:100})
+# Same as above, but with approximately 100:1 cost for correctly detecting minority cases
+clfLinC = svm.SVC(gamma = "auto", kernel = "linear", class_weight = {0:0.01, 1:0.99})
 clfLinC.fit(train_x, train_y)
-clf2dgC = svm.SVC(gamma = "auto", kernel = "poly", degree = 2, class_weight = {0:1, 1:100})
+clf2dgC = svm.SVC(gamma = "auto", kernel = "poly", degree = 2, class_weight = {0:0.01, 1:0.99})
 clf2dgC.fit(train_x, train_y)
-clf3dgC = svm.SVC(gamma = "auto", kernel = "poly", degree = 3, class_weight = {0:1, 1:100})
+clf3dgC = svm.SVC(gamma = "auto", kernel = "poly", degree = 3, class_weight = {0:0.01, 1:0.99})
 clf3dgC.fit(train_x, train_y)
-clfRbfC = svm.SVC(gamma = "auto", kernel = "rbf", class_weight = {0:1, 1:100})
+clfRbfC = svm.SVC(gamma = "auto", kernel = "rbf", class_weight = {0:0.01, 1:0.99})
 clfRbfC.fit(train_x, train_y)
 
 # Plot SVM decision boundaries on top of training data
@@ -238,25 +241,28 @@ pyplot.savefig("Plot_SVM.jpeg", dpi = 800, facecolor = "white")
 # Split data into training and test and fit SVM, then calculate stats on test data
 # Repeat this 1000 times with 50/50 test/train split
 # Do this for linear kernel, polynomial (2 and 3 degree), and radial kernels
-model_cv(clfLin, 1000)
-model_cv(clf2dg, 1000)
-model_cv(clf3dg, 1000)
-model_cv(clfRbf, 1000)
+model_cv(clfLin, 1000, ["f1_micro", "f1_weighted"])
+model_cv(clf2dg, 1000, ["f1_micro", "f1_weighted"])
+model_cv(clf3dg, 1000, ["f1_micro", "f1_weighted"])
+model_cv(clfRbf, 1000, ["f1_micro", "f1_weighted"])
 
 # Again, we are assuming that no class is more "important" than the other
-# Thus, we can compare micro average and find that the polynomial (2) kernel performs best
+# Thus, we can compare F1 micro average and find that the polynomial (2) kernel performs best
 
-# Now, we assume that the "importance" of the minority class is 100:1
+# Now, we assume that the "importance" of the minority class is approximately 100:1
 # A weighted model would incur a heavy penalty for misclassifying a minority class
 
 # Split data into training and test and fit SVM, then calculate stats on test data
 # Repeat this 1000 times with 50/50 test/train split and 100:1 weight on minority class
 # Do this for linear kernel, polynomial (2 and 3 degree), and radial kernels
 # Reduce reps to 500 since this is more computationally expensive
-model_cv(clfLinC, 500)
-model_cv(clf2dgC, 500)
-model_cv(clf3dgC, 500)
-model_cv(clfRbfC, 500)
+model_cv(clfLinC, 500, ["balanced_accuracy"])
+model_cv(clf2dgC, 500, ["balanced_accuracy"])
+model_cv(clf3dgC, 500, ["balanced_accuracy"])
+model_cv(clfRbfC, 500, ["balanced_accuracy"])
+
+# Compare balanced accuracy, which inversely weights accuracy based on class size
+# The linear kernel performs best
 
 
 
@@ -265,7 +271,7 @@ model_cv(clfRbfC, 500)
 ##### ROC and precision-recall curves ---------------------------------------------------------------------
 
 # We need to work with fitted probabilities and thresholds
-# Thus, we will use logistic regression instead of SVM
+# Thus, we will use the LDA model from earlier
 
 # Create no-skill model to compare model performance
 clfNull = DummyClassifier(strategy = "stratified")
@@ -273,11 +279,9 @@ clfNull.fit(train_x, train_y)
 y_hat = clfNull.predict_proba(test_x)
 p_null = y_hat[:, 1]
 
-# Fit logistic regression; find AUC and AUPRC on test data
+# Find LDA AUC and AUPRC on test data
 # Note: AUC is not paritcularly useful here
-model = LogisticRegression(solver = "lbfgs")
-model.fit(train_x, train_y)
-y_hat = model.predict_proba(test_x)
+y_hat = clfLDA.predict_proba(test_x)
 p_model = y_hat[:, 1]
 print(roc_auc_score(test_y, p_model))
 precision, recall, _ = precision_recall_curve(test_y, p_model)
@@ -289,7 +293,7 @@ print(auc(recall, precision))
 f_pos, t_pos, _ = roc_curve(test_y, p_null)
 pyplot.plot(f_pos, t_pos, linestyle = "--", label = "No Skill", color = "black")
 f_pos, t_pos, thresh = roc_curve(test_y, p_model)
-pyplot.plot(f_pos, t_pos, marker = ".", label = "Logistic Regression", color = "green")
+pyplot.plot(f_pos, t_pos, linestyle = "-", label = "LDA", color = "green")
 max_val = argmax(sqrt(t_pos*(1 - f_pos)))
 print(thresh[max_val])
 pyplot.scatter(f_pos[max_val], t_pos[max_val], marker = "o", color = 'black')
@@ -303,13 +307,13 @@ pyplot.show()
 no_skill = len(test_y[test_y == 1])/len(test_y)
 pyplot.plot([0, 1], [no_skill, no_skill], linestyle = "--", label = "No Skill", color = "black")
 precision, recall, thresh = precision_recall_curve(test_y, p_model)
-pyplot.plot(recall, precision, marker = ".", label = "Logistic Regression", color = "green")
+pyplot.plot(recall, precision, linestyle = "-", label = "LDA", color = "green")
 max_val = argmax((2 * precision * recall)/(precision + recall))
 print(thresh[max_val])
 pyplot.scatter(recall[max_val], precision[max_val], marker = "o", color = 'black')
 pyplot.xlabel("Recall (Sensitivity)")
 pyplot.ylabel("Precision (PPV)")
-pyplot.legend(bbox_to_anchor = (0.03, 0.73, 0.4, 0.2))
+pyplot.legend(bbox_to_anchor = (0.03, 0.73, 0.24, 0.2))
 pyplot.show()
 
 # Define function to convert posterior probabilities to class labels
@@ -317,13 +321,13 @@ def prob_to_class(probs, thresh):
 	return (probs >= thresh).astype("int")
 
 # Predict class labels and get F-score for default threshold (0.5)
-y_hat = model.predict(test_x)
+y_hat = clfLDA.predict(test_x)
 print(f1_score(test_y, y_hat))
 
 # Predict posterior probabilities
 # For each threshold, assign class to probabilities and compute F-score
 # Find maximum F-score and threshold at which it occurs
-y_hat = model.predict_proba(test_x)
+y_hat = clfLDA.predict_proba(test_x)
 p_model = y_hat[:, 1]
 thresh = arange(0, 1, 0.001)
 f_scores = [f1_score(test_y, prob_to_class(p_model, i)) for i in thresh]
