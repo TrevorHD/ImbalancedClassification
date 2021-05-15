@@ -271,7 +271,9 @@ model_cv(clfRbfC, 500, ["balanced_accuracy"])
 ##### ROC and precision-recall curves ---------------------------------------------------------------------
 
 # We need to work with fitted probabilities and thresholds
-# Thus, we will use the LDA model from earlier
+# Thus, we will use a logistic regression instead of SVM
+clfLrg = LogisticRegression(solver = "lbfgs")
+clfLrg.fit(train_x, train_y)
 
 # Create no-skill model to compare model performance
 clfNull = DummyClassifier(strategy = "stratified")
@@ -281,7 +283,7 @@ p_null = y_hat[:, 1]
 
 # Find LDA AUC and AUPRC on test data
 # Note: AUC is not paritcularly useful here
-y_hat = clfLDA.predict_proba(test_x)
+y_hat = clfLrg.predict_proba(test_x)
 p_model = y_hat[:, 1]
 print(roc_auc_score(test_y, p_model))
 precision, recall, _ = precision_recall_curve(test_y, p_model)
@@ -293,7 +295,7 @@ print(auc(recall, precision))
 f_pos, t_pos, _ = roc_curve(test_y, p_null)
 pyplot.plot(f_pos, t_pos, linestyle = "--", label = "No Skill", color = "black")
 f_pos, t_pos, thresh = roc_curve(test_y, p_model)
-pyplot.plot(f_pos, t_pos, linestyle = "-", label = "LDA", color = "green")
+pyplot.plot(f_pos, t_pos, linestyle = "-", label = "Logistic Regression", color = "green")
 max_val = argmax(sqrt(t_pos*(1 - f_pos)))
 print(thresh[max_val])
 pyplot.scatter(f_pos[max_val], t_pos[max_val], marker = "o", color = 'black')
@@ -307,60 +309,44 @@ pyplot.show()
 no_skill = len(test_y[test_y == 1])/len(test_y)
 pyplot.plot([0, 1], [no_skill, no_skill], linestyle = "--", label = "No Skill", color = "black")
 precision, recall, thresh = precision_recall_curve(test_y, p_model)
-pyplot.plot(recall, precision, linestyle = "-", label = "LDA", color = "green")
+pyplot.plot(recall, precision, linestyle = "-", label = "Logistic Regression", color = "green")
 max_val = argmax((2 * precision * recall)/(precision + recall))
 print(thresh[max_val])
 pyplot.scatter(recall[max_val], precision[max_val], marker = "o", color = 'black')
 pyplot.xlabel("Recall (Sensitivity)")
 pyplot.ylabel("Precision (PPV)")
-pyplot.legend(bbox_to_anchor = (0.03, 0.73, 0.24, 0.2))
+pyplot.legend(bbox_to_anchor = (0.21, 0.73, 0.24, 0.2))
 pyplot.show()
+
+# Note: data is pretty well-separated, so posterior probabilities are close to 0 or 1
+# Thus, moving the threshold will not change much unless close to 0 or 1
+# But where is the optimal threshold?
 
 # Define function to convert posterior probabilities to class labels
 def prob_to_class(probs, thresh):
 	return (probs >= thresh).astype("int")
 
 # Predict class labels and get F-score for default threshold (0.5)
-y_hat = clfLDA.predict(test_x)
+y_hat = clfLrg.predict(test_x)
 print(f1_score(test_y, y_hat))
 
 # Predict posterior probabilities
 # For each threshold, assign class to probabilities and compute F-score
 # Find maximum F-score and threshold at which it occurs
-y_hat = clfLDA.predict_proba(test_x)
+y_hat = clfLrg.predict_proba(test_x)
 p_model = y_hat[:, 1]
 thresh = arange(0, 1, 0.001)
 f_scores = [f1_score(test_y, prob_to_class(p_model, i)) for i in thresh]
 print(thresh[argmax(f_scores)])
-print(f_scores[argmax(f_scores)])
+print(max(f_scores))
 
-
-
-
-
-##### Model selection with cross validation and cost-sensitive learning -----------------------------------
-
-# 50-fold cross-validated regression with no class weights
-model = LogisticRegressionCV(cv = 50, solver = "lbfgs")
-model.fit(train_x, train_y)
-metrics.confusion_matrix(test_y, model.predict(test_x))
-
-# 50-fold cross-validated regression with 100:1 penalty for misclassifying 
-model = LogisticRegressionCV(cv = 50, solver = "lbfgs", class_weight = {0:1, 1:100})
-model.fit(train_x, train_y)
-metrics.confusion_matrix(test_y, model.predict(test_x))
-
-# Predict probabilities with cost-sensitive model
-y_hat = model.predict_proba(test_x)
-p_model = y_hat[:, 1]
-
-# Plot precision and recall versus probability threshold for cost-sensitive model
+# Plot precision and recall versus probability threshold
 precision, recall, thresh = precision_recall_curve(test_y, p_model)
-pyplot.plot(numpy.append(thresh, 1), precision, marker = ".", label = "Precision", color = "green")
-pyplot.plot(numpy.append(thresh, 1), recall, marker = ".", label = "Recall", color = "blue")
+pyplot.plot(numpy.append(thresh, 1), precision, linestyle = "-", label = "Precision", color = "green")
+pyplot.plot(numpy.append(thresh, 1), recall, linestyle = "-", label = "Recall", color = "blue")
 pyplot.xlabel("Threshold")
 pyplot.ylabel("Value")
-pyplot.legend(bbox_to_anchor = (0.72, 0.75, 0.1, 0.2))
+pyplot.legend(bbox_to_anchor = (0.87, 0.75, 0.1, 0.2))
 pyplot.show()
 pyplot.show()
 
@@ -368,7 +354,7 @@ pyplot.show()
 
 
 
-##### Logistic regression: rebalance data with over-sampling ----------------------------------------------
+##### Rebalance data with over-sampling -------------------------------------------------------------------
 
 # Fit to training data and evaluate performance on test data (no rebalancing)
 cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
@@ -422,7 +408,7 @@ mean(output["test_recall"])
 
 
 
-##### Logistic regression: rebalance data with under-sampling ---------------------------------------------
+##### Rebalance data with under-sampling ------------------------------------------------------------------
 
 # Undersample majority class at 1:1 ratio
 # This block of code does not influence models, and just shows how under-sampling works
@@ -466,7 +452,7 @@ mean(output["test_recall"])
 
 
 
-##### Logistic regression: rebalance data with over- and under-sampling -----------------------------------
+##### Rebalance data with over- and under-sampling --------------------------------------------------------
 
 # Oversample minority class at 1:4 ratio, then undersample majority class at 1:2 ratio
 # This block of code does not influence models, and just shows how under-sampling works
