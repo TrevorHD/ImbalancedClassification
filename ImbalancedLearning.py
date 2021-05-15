@@ -4,16 +4,13 @@
 from sklearn import metrics
 from sklearn import svm
 from sklearn.dummy import DummyClassifier
-from sklearn.metrics import make_scorer
 from sklearn.datasets import make_classification
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import auc
-from sklearn.metrics import balanced_accuracy_score
 from sklearn.linear_model import LogisticRegression
-from sklearn.linear_model import LogisticRegressionCV
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_validate
@@ -23,7 +20,7 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 # Imports from other packages
 import numpy
-from pandas import *
+from pandas import DataFrame
 from numpy import sqrt
 from numpy import mean
 from numpy import argmax
@@ -290,36 +287,44 @@ print(roc_auc_score(test_y, p_model))
 precision, recall, _ = precision_recall_curve(test_y, p_model)
 print(auc(recall, precision))
 
-# Plot ROC curve and no-skill line on test data
+# Plot ROC curve and PR curve, along with no-skill line on test data
 # Place point at optimal location based on geometric mean and print optimal threshold
-# Note: this is not helpful since data is severely imbalanced
+# Note: the ROC curve is not particularly helpful since data is severely imbalanced
+fig = pyplot.figure(figsize = (3, 1), dpi = 800)
+ax = pyplot.subplot(1, 2, 1)
 f_pos, t_pos, _ = roc_curve(test_y, p_null)
-pyplot.plot(f_pos, t_pos, linestyle = "--", label = "No Skill", color = "black")
+pyplot.plot(f_pos, t_pos, linestyle = "-", linewidth = 0.6, label = "No Skill", color = "black")
 f_pos, t_pos, thresh = roc_curve(test_y, p_model)
-pyplot.plot(f_pos, t_pos, linestyle = "-", label = "Logistic Regression", color = "green")
+pyplot.plot(f_pos, t_pos, linestyle = "-", linewidth = 0.6, label = "Logistic Regression", color = "green")
+pyplot.xticks(fontsize = 4)
+pyplot.yticks(fontsize = 4)
+pyplot.tick_params(length = 2, width = 0.5)
 max_val = argmax(sqrt(t_pos*(1 - f_pos)))
 print(thresh[max_val])
-pyplot.scatter(f_pos[max_val], t_pos[max_val], marker = "o", color = 'black')
-pyplot.xlabel("1 - Specificity")
-pyplot.ylabel("Sensitivity")
-pyplot.legend()
-pyplot.show()
-
-# Plot PR curve and no-skill line on test data
-# Place point at optimal location based on F-score and print optimal threshold
+pyplot.scatter(f_pos[max_val], t_pos[max_val], marker = ".", color = "black", s = 2)
+pyplot.xlabel("1 - Specificity", fontsize = 5)
+pyplot.ylabel("Sensitivity", fontsize = 5)
+ax = pyplot.subplot(1, 2, 2)
 no_skill = len(test_y[test_y == 1])/len(test_y)
-pyplot.plot([0, 1], [no_skill, no_skill], linestyle = "--", label = "No Skill", color = "black")
+pyplot.plot([0, 1], [no_skill, no_skill], linestyle = "-", linewidth = 0.6, label = "No Skill", color = "black")
 precision, recall, thresh = precision_recall_curve(test_y, p_model)
-pyplot.plot(recall, precision, linestyle = "-", label = "Logistic Regression", color = "green")
+pyplot.plot(recall, precision, linestyle = "-", linewidth = 0.6, label = "Logistic Regression", color = "green")
+pyplot.xticks(fontsize = 4)
+ax.yaxis.tick_right()
+ax.yaxis.set_label_position("right")
+pyplot.yticks(fontsize = 4)
+pyplot.tick_params(length = 2, width = 0.5)
 max_val = argmax((2 * precision * recall)/(precision + recall))
 print(thresh[max_val])
-pyplot.scatter(recall[max_val], precision[max_val], marker = "o", color = 'black')
-pyplot.xlabel("Recall (Sensitivity)")
-pyplot.ylabel("Precision (PPV)")
-pyplot.legend(bbox_to_anchor = (0.21, 0.73, 0.24, 0.2))
-pyplot.show()
+pyplot.scatter(recall[max_val], precision[max_val], marker = ".", color = "black", s = 2)
+pyplot.xlabel("Recall (Sensitivity)", fontsize = 5)
+pyplot.ylabel("Precision (PPV)", fontsize = 5)
+lg = pyplot.legend(bbox_to_anchor = (0.14, 0.73, 0.24, 0.2), fontsize = 2)
+lg.get_frame().set_linewidth(0.3)
+pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
+pyplot.savefig("Plot_Crv.jpeg", dpi = 800, facecolor = "white")
 
-# Note: data is pretty well-separated, so posterior probabilities are close to 0 or 1
+# Note: the data is pretty well-separated, so posterior probabilities are close to 0 or 1
 # Thus, moving the threshold will not change much unless close to 0 or 1
 # But where is the optimal threshold?
 
