@@ -4,6 +4,7 @@
 from sklearn import metrics
 from sklearn import svm
 from sklearn.dummy import DummyClassifier
+from sklearn.datasets import make_blobs
 from sklearn.datasets import make_classification
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import f1_score
@@ -38,7 +39,7 @@ from imblearn.under_sampling import RandomUnderSampler
 
 ##### Generate data ---------------------------------------------------------------------------------------
 
-# Randomly generate imbalanced data with class and two predictor variables
+# Randomly generate imbalanced data with 2 classes and two predictor variables
 data_x, data_y = make_classification(n_samples = 10000, n_classes = 2, n_features = 2, n_informative = 2,
                                      n_redundant = 0, n_repeated = 0, weights = [0.99, 0.01], flip_y = 0.006,
                                      random_state = 1, class_sep = 2, n_clusters_per_class = 1)
@@ -56,17 +57,24 @@ bounds = [0, 0.5, 1]
 norm = colors.BoundaryNorm(bounds, cmap.N)
 
 # Define function to scatterplot data
-def plot_scatter(d_x, d_y, fontsize = 10, legend = True, x1lab = True, x2lab = True, loc = "upper left"):
+def plot_scatter(d_x, d_y, fontsize = 10, legend = True, x1lab = True, x2lab = True,
+                 loc = "upper left", binClass = True):
     scatter = pyplot.scatter(d_x[:, 0], d_x[:, 1], c = d_y, cmap = cmap, norm = norm, alpha = 0.3, s = 20,
                              marker = ".", edgecolors = "none")
     if x1lab == True:
         pyplot.xlabel("X1", fontsize = 5)
     if x2lab == True:
         pyplot.ylabel("X2", fontsize = 5)
-    pyplot.xlim([0, 5])
-    pyplot.ylim([-6, 6])
-    pyplot.xticks(fontsize = 4)
-    pyplot.yticks(fontsize = 4)
+    if binClass == True:
+        pyplot.xlim([0, 5])
+        pyplot.ylim([-6, 6])
+        pyplot.xticks([0, 1, 2, 3, 4, 5], fontsize = 4)
+        pyplot.yticks([-6, -3, 0, 3, 6], fontsize = 4)
+    else:
+        pyplot.xlim([-6, 12])
+        pyplot.ylim([-3, 15])
+        pyplot.xticks([-6, -3, 0, 3, 6, 9, 12], fontsize = 4)
+        pyplot.yticks([-3, 0, 3, 6, 9, 12, 15], fontsize = 4)
     pyplot.tick_params(length = 2, width = 0.5)
     if legend == True:
         lg = pyplot.legend(*scatter.legend_elements(), fontsize = fontsize, loc = loc, edgecolor = "black",
@@ -83,9 +91,6 @@ plot_scatter(d_x = test_x, d_y = test_y, x2lab = False, legend = False)
 ax.text(4.85, -5.5, "Test", fontsize = 4, horizontalalignment = "right")
 pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.savefig("Plot_Pts.jpeg", dpi = 800, facecolor = "white")
-
-# Plot full data
-plot_scatter(d_x = data_x, d_y = data_y)
 
 
 
@@ -461,4 +466,36 @@ pipeline = Pipeline([("samp1", RandomOverSampler(sampling_strategy = 0.25)),
                      ("samp2", RandomUnderSampler(sampling_strategy = 0.5)),
                      ("model", LogisticRegression(solver = "lbfgs"))])
 model_cv(pipeline, 1000, ["f1_micro", "f1_macro", "f1_weighted", "balanced_accuracy"])
+
+
+
+
+
+##### Multi-class models with imbalanced data -------------------------------------------------------------
+
+# Randomly generate imbalanced data with 4 classes and two predictor variables
+data_x, data_y = make_blobs(n_samples = [3500, 3500, 3400, 100], n_features = 2, cluster_std = [1.5, 1.5, 1, 0.8],
+                            centers = numpy.array([[1.1, 2.0], [1.5, 8.5], [6.4, 7.4], [5.2, 2.7]]), random_state = 1)
+
+# Combine data into one array
+data = numpy.column_stack((data_x, data_y))
+
+# Split data into training and test set, 50/50 with class (y) stratified
+train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, test_size = 0.5,
+                                                    random_state = 2, stratify = data_y)
+
+# Set colour map for scatterplots
+cmap = colors.ListedColormap(["blue", "purple", "yellow", "red"])
+bounds = [0, 0.5, 1.5, 2.5, 3]
+norm = colors.BoundaryNorm(bounds, cmap.N)
+
+fig = pyplot.figure(figsize = (3, 1), dpi = 800)
+ax = pyplot.subplot(1, 2, 1)
+plot_scatter(d_x = train_x, d_y = train_y, fontsize = 4, binClass = False)
+ax.text(11.7, -2.3, "Training", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(1, 2, 2)
+plot_scatter(d_x = test_x, d_y = test_y, binClass = False, x2lab = False, legend = False)
+ax.text(11.7, -2.3, "Test", fontsize = 4, horizontalalignment = "right")
+pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
+pyplot.savefig("Plot_Pts2.jpeg", dpi = 800, facecolor = "white")
 
