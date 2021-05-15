@@ -77,8 +77,10 @@ def plot_scatter(d_x, d_y, fontsize = 10, legend = True, x1lab = True, x2lab = T
 fig = pyplot.figure(figsize = (3, 1), dpi = 800)
 ax = pyplot.subplot(1, 2, 1)
 plot_scatter(d_x = train_x, d_y = train_y, fontsize = 4)
+ax.text(4.85, -5.5, "Training", fontsize = 4, horizontalalignment = "right")
 ax = pyplot.subplot(1, 2, 2)
-plot_scatter(d_x = train_x, d_y = train_y, x2lab = False, legend = False)
+plot_scatter(d_x = test_x, d_y = test_y, x2lab = False, legend = False)
+ax.text(4.85, -5.5, "Test", fontsize = 4, horizontalalignment = "right")
 pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.savefig("Plot_Pts.jpeg", dpi = 800, facecolor = "white")
 
