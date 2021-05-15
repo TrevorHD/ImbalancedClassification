@@ -151,9 +151,10 @@ print(metrics.confusion_matrix(test_y, clfLDA.predict(test_x)))
 # Create function to run cross-validation and output various statistics
 # Split data into training and test; fit model to training data, calculate stats on test data
 # Repeat this n_repeats times with 50/50 test/train split
-def model_cv(mod, n_repeats, metList):
+# Accepts model or pipeline objects
+def model_cv(obj, n_repeats, metList):
     cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = n_repeats, random_state = 32463)
-    output = cross_validate(mod, data_x, data_y, cv = cv, scoring = metList, n_jobs = -1)
+    output = cross_validate(obj, data_x, data_y, cv = cv, scoring = metList, n_jobs = -1)
     df = DataFrame(columns = ["metric", "value"])
     for i in metList:
         newdat = DataFrame({"metric":[i], "value":[mean(output["test_" + i])]})
@@ -365,16 +366,6 @@ os = RandomOverSampler(sampling_strategy = "minority")
 os_x, os_y = os.fit_resample(train_x, train_y)
 print(Counter(train_y))
 print(Counter(os_y))
-
-# Add variant of model_cv to allow for pipelines
-def model_cvp(pipe, n_repeats, metList):
-    cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = n_repeats, random_state = 32463)
-    output = cross_validate(pipe, data_x, data_y, cv = cv, scoring = metList, n_jobs = -1)
-    df = DataFrame(columns = ["metric", "value"])
-    for i in metList:
-        newdat = DataFrame({"metric":[i], "value":[mean(output["test_" + i])]})
-        df = df.append(newdat, ignore_index = True)
-    print(df)
 
 # Fit to training data and evaluate performance on test data (1:1 rebalancing)
 pipeline = Pipeline([("samp", RandomOverSampler(sampling_strategy = "minority")),
