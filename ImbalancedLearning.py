@@ -104,6 +104,7 @@ def plot_contours(ax, clf, xx, yy, **params):
     return out
 
 # Compare models using single validation set approach
+# For now, we are assuming that no class is more "important" than the other
 
 # Fit LDA and QDA on training data
 clfLDA = LinearDiscriminantAnalysis()
@@ -125,8 +126,8 @@ pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.savefig("Plot_DA.jpeg", dpi = 800, facecolor = "white")
 
 # Print F-scores; linear kernel is better
-print(metrics.f1_score(train_y, clfLDA.predict(train_x)))
-print(metrics.f1_score(train_y, clfQDA.predict(train_x)))
+print(metrics.f1_score(train_y, clfLDA.predict(train_x), average = "micro"))
+print(metrics.f1_score(train_y, clfQDA.predict(train_x), average = "micro"))
 
 # Print AUPRC; linear kernel is better
 precision, recall, _ = precision_recall_curve(train_y, clfLDA.predict(train_x))
@@ -136,33 +137,35 @@ print(auc(recall, precision))
 
 # Evaluate linear kernel performance on test data
 metrics.confusion_matrix(test_y, clfLDA.predict(test_x))
-print(metrics.f1_score(test_y, clfLDA.predict(test_x)))
+print(metrics.f1_score(test_y, clfLDA.predict(test_x), average = "micro"))
 precision, recall, _ = precision_recall_curve(test_y, clfLDA.predict(test_x))
 print(auc(recall, precision))
+print(metrics.classification_report(test_y, clfLDA.predict(test_x)))
+print(metrics.confusion_matrix(test_y, clfLDA.predict(test_x)))
 
 # Compare models using cross-validation approach
 
 # Split data into training and test; fit LDA to training, calculate stats on test data
 # Repeat this 1000 times; 50/50 test/train split
 cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(LinearDiscriminantAnalysis(), data_x, data_y, cv = cv, n_jobs = -1,
+output = cross_validate(clfLDA, data_x, data_y, cv = cv, n_jobs = -1,
                         scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-mean(output["test_f1_micro"])
-mean(output["test_f1_macro"])
-mean(output["test_precision"])
-mean(output["test_recall"])
+print(mean(output["test_f1_micro"]))
+print(mean(output["test_f1_macro"]))
+print(mean(output["test_precision"]))
+print(mean(output["test_recall"]))
 
 # Split data into training and test; fit QDA to training, calculate stats on test data
 # Repeat this 1000 times; 50/50 test/train split
 cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
-output = cross_validate(QuadraticDiscriminantAnalysis(), data_x, data_y, cv = cv, n_jobs = -1,
+output = cross_validate(clfQDA, data_x, data_y, cv = cv, n_jobs = -1,
                         scoring = ["f1_micro", "f1_macro", "recall", "precision"])
-mean(output["test_f1_micro"])
-mean(output["test_f1_macro"])
-mean(output["test_precision"])
-mean(output["test_recall"])
+print(mean(output["test_f1_micro"]))
+print(mean(output["test_f1_macro"]))
+print(mean(output["test_precision"]))
+print(mean(output["test_recall"]))
 
-# For now, we are assuming that no class is more "important" than the other
+# Again, we are assuming that no class is more "important" than the other
 # Thus, we can compare micro average and find that the linear model performs better
 
 
@@ -229,46 +232,102 @@ plot_scatter(d_x = train_x, d_y = train_y, x2lab = False, legend = False)
 pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.savefig("Plot_SVM.jpeg", dpi = 800, facecolor = "white")
 
-# Print F-scores for cost-insensitive models; linear and radial kernels are best
-print(metrics.f1_score(train_y, clfLin.predict(train_x)))
-print(metrics.f1_score(train_y, clf2dg.predict(train_x)))
-print(metrics.f1_score(train_y, clf3dg.predict(train_x)))
-print(metrics.f1_score(train_y, clfRbf.predict(train_x)))
+# Compare models using cross-validation approach
+# For now, we are assuming that no class is more "important" than the other
 
-# Print AUPRC for cost-insensitive models; linear and radial kernels are best
-precision, recall, _ = precision_recall_curve(train_y, clfLin.predict(train_x))
-print(auc(recall, precision))
-precision, recall, _ = precision_recall_curve(train_y, clf2dg.predict(train_x))
-print(auc(recall, precision))
-precision, recall, _ = precision_recall_curve(train_y, clf3dg.predict(train_x))
-print(auc(recall, precision))
-precision, recall, _ = precision_recall_curve(train_y, clfRbf.predict(train_x))
-print(auc(recall, precision))
+# Split data into training and test; fit unweighted linear kernel to training
+# Then calculate stats on test data
+# Repeat this 1000 times; 50/50 test/train split
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(clfLin, data_x, data_y, cv = cv, n_jobs = -1,
+                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
+print(mean(output["test_f1_micro"]))
+print(mean(output["test_f1_macro"]))
+print(mean(output["test_precision"]))
+print(mean(output["test_recall"]))
 
-# Print F-scores for cost-sensitive models; linear and radial kernels are best
-print(metrics.f1_score(train_y, clfLinC.predict(train_x)))
-print(metrics.f1_score(train_y, clf2dgC.predict(train_x)))
-print(metrics.f1_score(train_y, clf3dgC.predict(train_x)))
-print(metrics.f1_score(train_y, clfRbfC.predict(train_x)))
+# Split data into training and test; fit unweighted polynomial (2) kernel to training
+# Then calculate stats on test data
+# Repeat this 1000 times; 50/50 test/train split
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(clf2dg, data_x, data_y, cv = cv, n_jobs = -1,
+                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
+print(mean(output["test_f1_micro"]))
+print(mean(output["test_f1_macro"]))
+print(mean(output["test_precision"]))
+print(mean(output["test_recall"]))
 
-# Print AUPRC for cost-sensitive models; linear and radial kernels are best
-precision, recall, _ = precision_recall_curve(train_y, clfLinC.predict(train_x))
-print(auc(recall, precision))
-precision, recall, _ = precision_recall_curve(train_y, clf2dgC.predict(train_x))
-print(auc(recall, precision))
-precision, recall, _ = precision_recall_curve(train_y, clf3dgC.predict(train_x))
-print(auc(recall, precision))
-precision, recall, _ = precision_recall_curve(train_y, clfRbfC.predict(train_x))
-print(auc(recall, precision))
+# Split data into training and test; fit unweighted polynomial (3) kernel to training
+# Then calculate stats on test data
+# Repeat this 1000 times; 50/50 test/train split
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(clf3dg, data_x, data_y, cv = cv, n_jobs = -1,
+                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
+print(mean(output["test_f1_micro"]))
+print(mean(output["test_f1_macro"]))
+print(mean(output["test_precision"]))
+print(mean(output["test_recall"]))
 
-# Evaluate performance of linear kernel on test data
-# Get classification report and confusion matrix
-metrics.classification_report(test_y, clfLin.predict(test_x))
-metrics.confusion_matrix(test_y, clfLin.predict(test_x))
+# Split data into training and test; fit unweighted radial kernel to training
+# Then calculate stats on test data
+# Repeat this 1000 times; 50/50 test/train split
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 1000, random_state = 32463)
+output = cross_validate(clfRbf, data_x, data_y, cv = cv, n_jobs = -1,
+                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
+print(mean(output["test_f1_micro"]))
+print(mean(output["test_f1_macro"]))
+print(mean(output["test_precision"]))
+print(mean(output["test_recall"]))
 
-# Get overall accuracy on test data
-# Note: this is not helpful since data is severely imbalanced
-metrics.accuracy_score(test_y, clfLin.predict(test_x))
+# Again, we are assuming that no class is more "important" than the other
+# Thus, we can compare micro average and find that the polynomial (2) kernel performs best
+
+# Now, we assume that the "importance" of the minority class is 100:1
+# A weighted model would incur a heavy penalty for misclassifying a minority class
+
+# Split data into training and test; fit weighted linear kernel to training
+# Then calculate stats on test data
+# Repeat this 1000 times; 50/50 test/train split
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 500, random_state = 32463)
+output = cross_validate(clfLinC, data_x, data_y, cv = cv, n_jobs = -1,
+                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
+print(mean(output["test_f1_micro"]))
+print(mean(output["test_f1_macro"]))
+print(mean(output["test_precision"]))
+print(mean(output["test_recall"]))
+
+# Split data into training and test; fit weighted polynomial (2) kernel to training
+# Then calculate stats on test data
+# Repeat this 1000 times; 50/50 test/train split
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 500, random_state = 32463)
+output = cross_validate(clf2dgC, data_x, data_y, cv = cv, n_jobs = -1,
+                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
+print(mean(output["test_f1_micro"]))
+print(mean(output["test_f1_macro"]))
+print(mean(output["test_precision"]))
+print(mean(output["test_recall"]))
+
+# Split data into training and test; fit weighted polynomial (3) kernel to training
+# Then calculate stats on test data
+# Repeat this 1000 times; 50/50 test/train split
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 500, random_state = 32463)
+output = cross_validate(clf3dgC, data_x, data_y, cv = cv, n_jobs = -1,
+                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
+print(mean(output["test_f1_micro"]))
+print(mean(output["test_f1_macro"]))
+print(mean(output["test_precision"]))
+print(mean(output["test_recall"]))
+
+# Split data into training and test; fit weighted radial kernel to training
+# Then calculate stats on test data
+# Repeat this 1000 times; 50/50 test/train split
+cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = 500, random_state = 32463)
+output = cross_validate(clfRbfC, data_x, data_y, cv = cv, n_jobs = -1,
+                        scoring = ["f1_micro", "f1_macro", "recall", "precision"])
+print(mean(output["test_f1_micro"]))
+print(mean(output["test_f1_macro"]))
+print(mean(output["test_precision"]))
+print(mean(output["test_recall"]))
 
 
 
