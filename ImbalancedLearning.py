@@ -475,7 +475,7 @@ model_cv(pipeline, 1000, ["f1_micro", "f1_macro", "f1_weighted", "balanced_accur
 
 # Randomly generate imbalanced data with 4 classes and two predictor variables
 data_x, data_y = make_blobs(n_samples = [3500, 3500, 3400, 100], n_features = 2, cluster_std = [1.5, 1.5, 1, 0.8],
-                            centers = numpy.array([[1.1, 2.0], [1.5, 8.5], [6.4, 7.4], [5.2, 2.7]]), random_state = 1)
+                            centers = numpy.array([[1.1, 2.0], [1.5, 8.5], [6.4, 7.4], [5.2, 3.5]]), random_state = 1)
 
 # Combine data into one array
 data = numpy.column_stack((data_x, data_y))
@@ -485,7 +485,7 @@ train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, test_size = 
                                                     random_state = 2, stratify = data_y)
 
 # Set colour map for scatterplots
-cmap = colors.ListedColormap(["blue", "purple", "yellow", "red"])
+cmap = colors.ListedColormap(["blue", "purple", "black", "red"])
 bounds = [0, 0.5, 1.5, 2.5, 3]
 norm = colors.BoundaryNorm(bounds, cmap.N)
 
@@ -498,4 +498,78 @@ plot_scatter(d_x = test_x, d_y = test_y, binClass = False, x2lab = False, legend
 ax.text(11.7, -2.3, "Test", fontsize = 4, horizontalalignment = "right")
 pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.savefig("Plot_Pts2.jpeg", dpi = 800, facecolor = "white")
+
+# Fit SVM with varying cost parameter c on training data
+clfRC1 = svm.SVC(gamma = "auto", kernel = "rbf", C = 1)
+clfRC1.fit(train_x, train_y)
+clfRC2 = svm.SVC(gamma = "auto", kernel = "rbf", C = 2)
+clfRC2.fit(train_x, train_y)
+clfRC3 = svm.SVC(gamma = "auto", kernel = "rbf", C = 5)
+clfRC3.fit(train_x, train_y)
+clfRC4 = svm.SVC(gamma = "auto", kernel = "rbf", C = 10)
+clfRC4.fit(train_x, train_y)
+
+# Same as above, but with approximately 100:1 cost for correctly detecting minority cases
+clfRC1C = svm.SVC(gamma = "auto", kernel = "rbf", C = 1, class_weight = {0:0.01, 1:0.01, 2:0.01, 3:0.97})
+clfRC1C.fit(train_x, train_y)
+clfRC2C = svm.SVC(gamma = "auto", kernel = "rbf", C = 2, class_weight = {0:0.01, 1:0.01, 2:0.01, 3:0.97})
+clfRC2C.fit(train_x, train_y)
+clfRC3C = svm.SVC(gamma = "auto", kernel = "rbf", C = 5, class_weight = {0:0.01, 1:0.01, 2:0.01, 3:0.97})
+clfRC3C.fit(train_x, train_y)
+clfRC4C = svm.SVC(gamma = "auto", kernel = "rbf", C = 10, class_weight = {0:0.01, 1:0.01, 2:0.01, 3:0.97})
+clfRC4C.fit(train_x, train_y)
+
+# Plot SVM decision boundaries on top of training data
+# Left column is cost-insensitive, right is cost-sensitive
+fig = pyplot.figure(figsize = (3, 4), dpi = 800)
+ax = pyplot.subplot(4, 2, 1)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfRC1, xx, yy, cmap = cmap, norm = norm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, binClass = False, x1lab = False, fontsize = 4)
+ax.text(-5.7, -2.5, "Weight 1:1:1:1", fontsize = 4, horizontalalignment = "left")
+ax.text(11.7, -2.5, "Radial (c = 1)", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(4, 2, 2)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfRC1C, xx, yy, cmap = cmap, norm = norm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, binClass = False, x1lab = False, x2lab = False, legend = False)
+ax.text(-5.7, -2.5, "Weight 1:1:1:97", fontsize = 4, horizontalalignment = "left")
+ax.text(11.7, -2.5, "Radial (c = 1)", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(4, 2, 3)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfRC2, xx, yy, cmap = cmap, norm = norm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, binClass = False, x1lab = False, legend = False)
+ax.text(-5.7, -2.5, "Weight 1:1:1:1", fontsize = 4, horizontalalignment = "left")
+ax.text(11.7, -2.5, "Radial (c = 2)", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(4, 2, 4)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfRC2C, xx, yy, cmap = cmap, norm = norm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, binClass = False, x1lab = False, x2lab = False, legend = False)
+ax.text(-5.7, -2.5, "Weight 1:1:1:97", fontsize = 4, horizontalalignment = "left")
+ax.text(11.7, -2.5, "Radial (c = 2)", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(4, 2, 5)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfRC3, xx, yy, cmap = cmap, norm = norm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, binClass = False, x1lab = False, legend = False)
+ax.text(-5.7, -2.5, "Weight 1:1:1:1", fontsize = 4, horizontalalignment = "left")
+ax.text(11.7, -2.5, "Radial (c = 5)", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(4, 2, 6)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfRC3C, xx, yy, cmap = cmap, norm = norm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, binClass = False, x1lab = False, x2lab = False, legend = False)
+ax.text(-5.7, -2.5, "Weight 1:1:1:97", fontsize = 4, horizontalalignment = "left")
+ax.text(11.7, -2.5, "Radial (c = 5)", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(4, 2, 7)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfRC4, xx, yy, cmap = cmap, norm = norm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, binClass = False, legend = False)
+ax.text(-5.7, -2.5, "Weight 1:1:1:1", fontsize = 4, horizontalalignment = "left")
+ax.text(11.7, -2.5, "Radial (c = 10)", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(4, 2, 8)
+xx, yy = plot_meshpoints(train_x[:, 0], train_x[:, 1])
+plot_contours(ax, clfRC4C, xx, yy, cmap = cmap, norm = norm, alpha = 0.4)
+plot_scatter(d_x = train_x, d_y = train_y, binClass = False, x2lab = False, legend = False)
+ax.text(-5.7, -2.5, "Weight 1:1:1:97", fontsize = 4, horizontalalignment = "left")
+ax.text(11.7, -2.5, "Radial (c = 10)", fontsize = 4, horizontalalignment = "right")
+pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
+pyplot.savefig("Plot_SVM2.jpeg", dpi = 800, facecolor = "white")
 
