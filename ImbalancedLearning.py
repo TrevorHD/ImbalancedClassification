@@ -471,7 +471,7 @@ model_cv(pipeline, 1000, ["f1_micro", "f1_macro", "f1_weighted", "balanced_accur
 
 
 
-##### Multi-class models with imbalanced data -------------------------------------------------------------
+##### Multi-class SVM with imbalanced data ----------------------------------------------------------------
 
 # Randomly generate imbalanced data with 4 classes and two predictor variables
 data_x, data_y = make_blobs(n_samples = [3500, 3500, 3400, 100], n_features = 2, cluster_std = [1.5, 1.5, 1, 0.8],
@@ -612,4 +612,37 @@ model_cv(clfRbfC, 1000, ["balanced_accuracy"], ous_x, ous_y)
 
 # Compare balanced accuracy, which inversely weights accuracy based on class size
 # We find that c = 5 performs best
+
+
+
+
+
+##### Multi-class SMOTE and ADASYN with imbalanced data ---------------------------------------------------
+
+# Randomly generate imbalanced data with 4 classes and two predictor variables
+data_x, data_y = make_blobs(n_samples = [4950, 4950, 100], n_features = 2, cluster_std = [1.5, 1.5, 1.8],
+                            centers = numpy.array([[1.1, 1.8], [1.5, 8.7], [7.2, 6.1]]), random_state = 1)
+
+# Combine data into one array
+data = numpy.column_stack((data_x, data_y))
+
+# Split data into training and test set, 50/50 with class (y) stratified
+train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, test_size = 0.5,
+                                                    random_state = 2, stratify = data_y)
+
+# Set colour map for scatterplots
+cmap = colors.ListedColormap(["blue", "purple", "red"])
+bounds = [0, 0.5, 1.5, 2]
+norm = colors.BoundaryNorm(bounds, cmap.N)
+
+# Plot training and test data separately
+fig = pyplot.figure(figsize = (3, 1), dpi = 800)
+ax = pyplot.subplot(1, 2, 1)
+plot_scatter(d_x = train_x, d_y = train_y, fontsize = 4, binClass = False)
+ax.text(11.5, -5.2, "Training", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(1, 2, 2)
+plot_scatter(d_x = test_x, d_y = test_y, binClass = False, x2lab = False, legend = False)
+ax.text(11.5, -5.2, "Test", fontsize = 4, horizontalalignment = "right")
+pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
+pyplot.savefig("Plot_Pts3.jpeg", dpi = 800, facecolor = "white")
 
