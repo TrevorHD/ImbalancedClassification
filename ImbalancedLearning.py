@@ -158,7 +158,7 @@ print(metrics.confusion_matrix(test_y, clfLDA.predict(test_x)))
 # Split data into training and test; fit model to training data, calculate stats on test data
 # Repeat this n_repeats times with 50/50 test/train split
 # Accepts model or pipeline objects
-def model_cv(obj, n_repeats, metList):
+def model_cv(obj, n_repeats, metList, data_x = data_x, data_y = data_y):
     cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = n_repeats, random_state = 32463)
     output = cross_validate(obj, data_x, data_y, cv = cv, scoring = metList, n_jobs = -1)
     df = DataFrame(columns = ["metric", "value"])
@@ -573,4 +573,43 @@ ax.text(-5.7, -5.1, "Weight 1:1:1:97", fontsize = 4, horizontalalignment = "left
 ax.text(11.7, -5.1, "Radial (c = 10)", fontsize = 4, horizontalalignment = "right")
 pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.savefig("Plot_SVM2.jpeg", dpi = 800, facecolor = "white")
+
+# SVM will take quite a bit to run on this larger multi-class problem
+# Thus, we will oversample and undersample
+# This will rebalance classes and reduce the number of data points to work with
+os = RandomOverSampler(sampling_strategy = {3:1700})
+os_x, os_y = os.fit_resample(train_x, train_y)
+us = RandomUnderSampler(sampling_strategy = {0:200, 1:200, 2:200, 3:200})
+ous_x, ous_y = us.fit_resample(os_x, os_y)
+print(Counter(train_y))
+print(Counter(os_y))
+print(Counter(ous_y))
+
+# Compare models using cross-validation approach
+# For now, we are assuming that no class is more "important" than the other
+
+# Split data into training and test and fit SVM, then calculate stats on test data
+# Repeat this 1000 times with 50/50 test/train split
+# Do this for the radial kernels at various cost parameters
+model_cv(clfRC1, 1000, ["f1_micro", "f1_weighted"], ous_x, ous_y)
+model_cv(clfRC2, 1000, ["f1_micro", "f1_weighted"], ous_x, ous_y)
+model_cv(clfRC3, 1000, ["f1_micro", "f1_weighted"], ous_x, ous_y)
+model_cv(clfRC4, 1000, ["f1_micro", "f1_weighted"], ous_x, ous_y)
+
+# Again, we are assuming that no class is more "important" than the other
+# Thus, we can compare F1 micro average and find that c = 2 performs best
+
+# Now, we assume that the "importance" of the minority class is approximately 100:1
+# A weighted model would incur a heavy penalty for misclassifying a minority class
+
+# Split data into training and test and fit SVM, then calculate stats on test data
+# Repeat this 1000 times with 50/50 test/train split and 97:1:1:1 weight on minority class
+# Do this for the radial kernels at various cost parameters
+model_cv(clfLinC, 1000, ["balanced_accuracy"], ous_x, ous_y)
+model_cv(clf2dgC, 1000, ["balanced_accuracy"], ous_x, ous_y)
+model_cv(clf3dgC, 1000, ["balanced_accuracy"], ous_x, ous_y)
+model_cv(clfRbfC, 1000, ["balanced_accuracy"], ous_x, ous_y)
+
+# Compare balanced accuracy, which inversely weights accuracy based on class size
+# We find that c = 5 performs best
 
