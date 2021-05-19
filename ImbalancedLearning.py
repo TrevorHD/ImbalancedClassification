@@ -30,6 +30,9 @@ from matplotlib import pyplot
 from matplotlib import colors
 from collections import Counter
 from imblearn.pipeline import Pipeline
+from imblearn.over_sampling import SMOTE
+from imblearn.over_sampling import ADASYN
+from imblearn.over_sampling import BorderlineSMOTE
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
 
@@ -645,4 +648,36 @@ plot_scatter(d_x = test_x, d_y = test_y, binClass = False, x2lab = False, legend
 ax.text(11.5, -5.2, "Test", fontsize = 4, horizontalalignment = "right")
 pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
 pyplot.savefig("Plot_Pts3.jpeg", dpi = 800, facecolor = "white")
+
+# Oversampling using SMOTE
+s_x, s_y = SMOTE(sampling_strategy = {2:1000}).fit_resample(train_x, train_y)
+print(Counter(train_y))
+print(Counter(s_y))
+
+# Oversampling using borderline SMOTE
+bs_x, bs_y = BorderlineSMOTE(sampling_strategy = {2:1000}).fit_resample(train_x, train_y)
+print(Counter(train_y))
+print(Counter(s_y))
+
+# Oversampling using ADASYN
+a_x, a_y = ADASYN(sampling_strategy = {2:1000}).fit_resample(train_x, train_y)
+print(Counter(train_y))
+print(Counter(a_y))
+
+# Plot training and test data separately
+fig = pyplot.figure(figsize = (3, 2), dpi = 800)
+ax = pyplot.subplot(2, 2, 1)
+plot_scatter(d_x = train_x, d_y = train_y, fontsize = 4, binClass = False)
+ax.text(11.5, -5.2, "No modification", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(2, 2, 2)
+plot_scatter(d_x = bs_x, d_y = bs_y, binClass = False, x2lab = False, legend = False)
+ax.text(11.5, -5.2, "SMOTE", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(2, 2, 3)
+plot_scatter(d_x = s_x, d_y = s_y, binClass = False, x2lab = False, legend = False)
+ax.text(11.5, -5.2, "Borderline SMOTE", fontsize = 4, horizontalalignment = "right")
+ax = pyplot.subplot(2, 2, 4)
+plot_scatter(d_x = a_x, d_y = a_y, binClass = False, x2lab = False, legend = False)
+ax.text(11.5, -5.2, "ADASYN", fontsize = 4, horizontalalignment = "right")
+pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
+pyplot.savefig("Plot_SMOTE.jpeg", dpi = 800, facecolor = "white")
 
