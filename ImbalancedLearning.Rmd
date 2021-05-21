@@ -2,7 +2,15 @@
 title: "Machine Learning on Imbalanced Data"
 subtitle: \textit{Applications in Python}
 author: "Trevor H. Drees"
-output: pdf_document
+output:
+  pdf_document:
+    toc: true
+  in_header: "Header.tex"
+header-includes:
+  - \usepackage{titling}
+  - \renewcommand{\and}{\\}
+  - \input{Header.tex}
+urlcolor: blue
 ---
 
 ```{r setup, include = FALSE}
@@ -16,12 +24,12 @@ library(reticulate)
 
 Imbalanced data can prove to be quite challenging to work with when using conventional machine learning algorithms, as many of these algorithms operate under the assumption that all classes in the data are approximately balanced. However, in many cases, the data we are most interested in classifying are often a minority of observations in the entire set; for example, a few spam emails out of hundreds of legitimate messages, or a few fraudulent credit card transactions out of thousands of legitimate purchases. Because traditional measurements of model performance often focus on metrics such as classification accuracy, they often fail to adequately capture the minority class, and we may observe instances when a model on a dataset with 990 observations in class A and 10 observations in class B can achieve 99% accuracy by completely ignoring class A and classifying everything as B. Also, the costs of misclassification might vary between the classes; for example, while fraudulent credit card transactions are extremely rare compared to legitimate purchases, a fraudulent transaction that is not detected may cost a bank or credit card company significantly more than a legitimate transaction that is falsely flagged as fraudulent. Many algorithms by default will assume equal costs of misclassification, which may not necessarily be true for certain scenarios.
 
-Here, we use synthetic data to explore some of the tools available in Python for classifying imbalanced data. Some of the topics we explore include scoring metrics such as area under the precision-recall curve (AUPRC), cost-sensitive learning using class weights, and various techniques to rebalance data such as SMOTE and ADASYN.
+Here, we use synthetic data to explore some of the tools available in Python for classifying imbalanced data, heavily relying on `sklearn` for most of model and scoring functions but also utilising some of the various sampling functions from `imbalanced-learn`. Some of the topics we explore include scoring metrics such as area under the precision-recall curve (AUPRC), cost-sensitive learning using class weights, and various techniques to rebalance data such as SMOTE and ADASYN. We also explore imbalanced classification in datasets with binary classes as well as in datasets with three or more different classes.
 
 # Two-class Classification
 
 ## Data Generation
-First, we set up a two-class classification problem. We randomly generate a total of 10000 samples, with the majority class making up 99% of the data and the minority class making up the other 1%. We can do this using the make_classification function from sklearn.
+First, we set up a two-class classification problem. We randomly generate a total of 10000 samples, with the majority class making up 99% of the data and the minority class making up the other 1%. We can do this using the `make_classification` function from `sklearn`.
 
 ``` {python}
 
@@ -32,9 +40,15 @@ data_x, data_y = make_classification(n_samples = 10000, n_classes = 2, n_feature
 
 ```
 
-As can be seen in Figure 1, we allow for a bit of overlap between the two classes so that we can explore the trade-offs involved in misclassifying points in the overlap zone; this becomes especially interesting once we assign different costs to the correct classification of each class.
+As can be seen in Figure \ref{fig:Figure1}, we allow for a bit of overlap between the two classes so that we can explore the trade-offs involved in misclassifying points in the overlap zone; this becomes especially interesting once we assign different costs to the correct classification of each class.
 
-## Discriminant analysis
+```{r Figure1, eval = TRUE, echo = FALSE, out.width = "460px", out.height = "460px", fig.cap = "\\label{fig:Figure1} A 50/50 split of the data into training (left) and test (right) sets. The majority class outnumbers the minority class by a ratio of 99:1."}
+
+knitr::include_graphics("Plot_Pts.jpeg")
+
+```
+
+## Discriminant Analysis
 
 First, we fit linear discriminant analysis (LDA) and quadratic discriminant analysis (QDA) models to our data. We start with a single validation set approach, splitting the data into a training set (50%) and test set (50%), done using the code below.
 
@@ -45,7 +59,7 @@ train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, test_size = 
 
 ```
 
-We can then fit the model to the training set before evaluating it on the test set. To fit the LDA and QDA models, we can use the respective functions from sklearn, given in the code below.
+We can then fit the model to the training set before evaluating it on the test set. To fit the LDA and QDA models, we can use the `LinearDiscriminantAnalysis` and `QuadraticDiscriminantAnalysis` functions from `sklearn`, as is shown in the code below. For each model, we first create a model object using each its respective function and then use the `fit` method to fit the models to the training data.
 
 ``` {python}
 
@@ -56,7 +70,7 @@ clfQDA.fit(train_x, train_y)
 
 ```
 
-For now, we assume that the cost of misclassifying a point from the majority class is the same as misclassifying a point from the minority class, so we do not place weights on either class. As such, we can compare performance on the training data using a micro-averaged F-score, and find that the LDA model outperforms the QDA model at 0.9962 versus 0.9958. We can also compare performance using the area under the precision-recall curve (AUPRC) on the training data and find that LDA again outperforms QDA at 0.8429 versus 0.8207. As can be seen in Figure 2, these differences are likely due to the fact that QDA misclassifies several majority class data points near the decision boundary, while LDA does so to a lesser extent. At this point, it is clear that the linear model performs better than the quadratic model, so we choose the former over the latter and then evaluate its performance on the test data; upon doing so, we get a micro-averaged F-score of 0.9976 and an AUPRC of 0.8994, indicating that the linear model actually performs better on the test data than it does on the training data.
+For now, we assume that the cost of misclassifying a point from the majority class is the same as misclassifying a point from the minority class, so we do not place weights on either class. As such, we can compare performance on the training data using a micro-averaged F-score, and find that the LDA model outperforms the QDA model at 0.9962 versus 0.9958. We can also compare performance using the area under the precision-recall curve (AUPRC) on the training data and find that LDA again outperforms QDA at 0.8429 versus 0.8207. As can be seen in Figure \ref{fig:Figure2}, these differences are likely due to the fact that the QDA model misclassifies several majority class data points near the decision boundary, while the LDA model does so to a lesser extent. At this point, it is clear that the linear model performs better than the quadratic model, so we choose the former over the latter and then evaluate its performance on the test data; upon doing so, we get a micro-averaged F-score of 0.9976 and an AUPRC of 0.8994, indicating that the linear model actually performs better on the test data than it does on the training data.
 
 It is important to note that the way the data is partitioned can affect model results, especially when using a single validation set; cross-validation provides an alternative approach that is more robust to randomness in how the training and test data are split, often allowing for more accurate model fitting and selection. We can write a function that performs cross-validation on a specified model and then returns the desired metrics, as has been done below.
 
@@ -70,6 +84,12 @@ def model_cv(obj, n_rep, metList, data_x = data_x, data_y = data_y):
         newdat = DataFrame({"metric":[i], "value":[mean(output["test_" + i])]})
         df = df.append(newdat, ignore_index = True)
     print(df)
+
+```
+
+```{r Figure2, eval = TRUE, echo = FALSE, out.width = "460px", out.height = "460px", fig.cap = "\\label{fig:Figure2} Decision boundaries generated by fitting LDA (left) and QDA (right) models to the training data."}
+
+knitr::include_graphics("Plot_DA.jpeg")
 
 ```
 
