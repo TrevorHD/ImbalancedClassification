@@ -7,13 +7,13 @@ from sklearn.dummy import DummyClassifier
 from sklearn.datasets import make_blobs
 from sklearn.datasets import make_classification
 from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import make_scorer
 from sklearn.metrics import f1_score
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import auc
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -21,6 +21,7 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 # Imports from other packages
 import numpy
+import warnings
 from pandas import DataFrame
 from numpy import sqrt
 from numpy import mean
@@ -278,14 +279,42 @@ model_cv(clfRbf, 1000, ["f1_micro", "f1_weighted"])
 # Now, we assume that the "importance" of the minority class is approximately 100:1
 # A weighted model would incur a heavy penalty for misclassifying a minority class
 
+# Redefine balanced_accuracy_score to allow for class weights
+def balanced_accuracy_score2(y_true, y_pred, *, w1, w2, adjusted = False):
+    C = metrics.confusion_matrix(y_true, y_pred)
+    with numpy.errstate(divide = "ignore", invalid = "ignore"):
+        per_class = numpy.diag(C) / C.sum(axis = 1)
+    if numpy.any(numpy.isnan(per_class)):
+        warnings.warn("y_pred contains classes not in y_true")
+        per_class = per_class[~numpy.isnan(per_class)]
+    score = per_class[0]*w1 + per_class[1]*w2
+    if adjusted:
+        n_classes = len(per_class)
+        chance = 1 / n_classes
+        score -= chance
+        score /= 1 - chance
+    return score
+
+# Turn above function into scorer
+scorer = make_scorer(balanced_accuracy_score2, w1 = 1/100, w2 = 99/100)
+
+# Create function to run cross-validation and output weighted accuracy
+# Split data into training and test; fit model to training data, calculate weighted accuracy on test data
+# Repeat this n_repeats times with 50/50 test/train split
+# Accepts model or pipeline objects
+def model_cv_bal(obj, n_repeats, data_x = data_x, data_y = data_y, weights = [1] * 5000):
+    cv = RepeatedStratifiedKFold(n_splits = 2, n_repeats = n_repeats, random_state = 32463)
+    output = cross_validate(obj, data_x, data_y, cv = cv, scoring = scorer, n_jobs = -1)
+    print(mean(output["test_score"]))
+
 # Split data into training and test and fit SVM, then calculate stats on test data
 # Repeat this 1000 times with 50/50 test/train split and 100:1 weight on minority class
 # Do this for linear kernel, polynomial (2 and 3 degree), and radial kernels
 # Reduce reps to 500 since this is more computationally expensive
-model_cv(clfLinC, 500, ["balanced_accuracy"])
-model_cv(clf2dgC, 500, ["balanced_accuracy"])
-model_cv(clf3dgC, 500, ["balanced_accuracy"])
-model_cv(clfRbfC, 500, ["balanced_accuracy"])
+model_cv_bal(clfLinC, 500)
+model_cv_bal(clf2dgC, 500)
+model_cv_bal(clf3dgC, 500)
+model_cv_bal(clfRbfC, 500)
 
 # Compare balanced accuracy, which inversely weights accuracy based on class size
 # The linear kernel performs best
