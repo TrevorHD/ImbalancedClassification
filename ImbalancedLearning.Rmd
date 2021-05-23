@@ -175,6 +175,40 @@ Here, we use `w1` and `w2` to assign class-specific weights, and have weighted t
 
 ## Precision-Recall Curves
 
+Typically, when working with balanced data sets, we can plot a receiver-operator characteristic (ROC) curve and use the area under the curve (AUC) as a metric for model skill, allowing us to compare predictive performance between models. However, ROC curves can be misleading on imbalanced data like ours because, much like accuracy, they will be biased towards the majority class. However, we can use precision-recall (PR) curves to avoid this issue, focusing on the trade-off between precision and recall rather than that between recall and false positive rate.
+
+Because we will eventually work with predicted probabilities when plotting these curves, and SVM does not return probabilities after fitting the models, we will use a logistic regression for this example. We use the `LogisticRegression` function from `sklearn` to fit a logistic regression, and then use the `predict_proba` method to get predicted probabilities. For this example, we assume equal weights between the two classes; however, given that `LogisticRegression` supports a `class_weight` argument, we could weight the classes like we did in the previous example if we wish.
+
+``` {python}
+
+clfLrg = LogisticRegression(solver = "lbfgs")
+clfLrg.fit(train_x, train_y)
+y_hat = clfLrg.predict_proba(test_x)
+p_model = y_hat[:, 1]
+
+```
+
+Now that we have a vector of predicted probabilities, we can use these probabilities and the actual class labels to calculate AUC for the ROC and PR curves. The `roc_auc_score` function will directly return an AUC for an ROC curve when given class labels and predicted probabilities; for the PR curve, we can use the `precision_recall_curve` function to calculate the values of precision and recall along the curve, and then use these values in the `auc` function to get the AUPRC.
+
+``` {python}
+
+# Calculate AUC
+print(roc_auc_score(test_y, p_model))
+
+# Calculate AUPRC
+precision, recall, _ = precision_recall_curve(test_y, p_model)
+print(auc(recall, precision))
+
+```
+
+In doing so, we get an AUC of 0.9459 and an AUPRC of 0.8660. The ROC and precision-recall curves can be seen in Figure \ref{fig:Figure4}; as can be seen here, the ROC curve exhibits high skill, which is lergely driven by correct classification of the majority class due to the massive class imbalance. From the precision-recall curve, we also see a steep drop in precision when recall approaches 1, indicating strong separation between the two classes.
+
+```{r Figure4, eval = TRUE, echo = FALSE, out.width = "470px", out.height = "470px", fig.cap = "\\label{fig:Figure4} ROC curve (left) and precision-recall curve (right) for a logistic regression fit using a single validation set. The dashed lines represent the no-skill model. \\bigskip"}
+
+knitr::include_graphics("Plot_Crv.jpeg")
+
+```
+
 ## Rebalancing With Over- and Under-Sampling
 
 # Multi-Class Classificaton
