@@ -426,7 +426,8 @@ pyplot.savefig("Plot_PRT.jpeg", dpi = 800, facecolor = "white")
 ##### Rebalance data with over-sampling -------------------------------------------------------------------
 
 # Fit to training data and evaluate performance on test data (no rebalancing)
-model_cv(clfLrg, 1000, ["f1_micro", "f1_macro", "f1_weighted", "balanced_accuracy"])
+clfLrgC = LogisticRegression(solver = "lbfgs", class_weight = {0:0.01, 1:0.99})
+model_cv_bal(clfLrgC, 1000)
 
 # Oversample minority class at 1:1 ratio
 # This block of code does not influence models, and just shows how over-sampling works
@@ -437,8 +438,8 @@ print(Counter(os_y))
 
 # Fit to training data and evaluate performance on test data (1:1 rebalancing)
 pipeline = Pipeline([("samp", RandomOverSampler(sampling_strategy = "minority")),
-                     ("model", LogisticRegression(solver = "lbfgs"))])
-model_cv(pipeline, 1000, ["f1_micro", "f1_macro", "f1_weighted", "balanced_accuracy"])
+                     ("model", LogisticRegression(solver = "lbfgs", class_weight = {0:0.01, 1:0.99}))])
+model_cv_bal(pipeline, 1000)
 
 # Oversample minority class at 1:4 ratio
 # This block of code does not influence models, and just shows how over-sampling works
@@ -449,8 +450,8 @@ print(Counter(os_y))
 
 # Fit to training data and evaluate performance on test data (4:1 rebalancing)
 pipeline = Pipeline([("samp", RandomOverSampler(sampling_strategy = 0.25)),
-                    ("model", LogisticRegression(solver = "lbfgs"))])
-model_cv(pipeline, 1000, ["f1_micro", "f1_macro", "f1_weighted", "balanced_accuracy"])
+                     ("model", LogisticRegression(solver = "lbfgs", class_weight = {0:0.01, 1:0.99}))])
+model_cv_bal(pipeline, 1000)
 
 
 
@@ -467,8 +468,8 @@ print(Counter(us_y))
 
 # Fit to training data and evaluate performance on test data (1:1 rebalancing)
 pipeline = Pipeline([("samp", RandomUnderSampler(sampling_strategy = "majority")),
-                     ("model", LogisticRegression(solver = "lbfgs"))])
-model_cv(pipeline, 1000, ["f1_micro", "f1_macro", "f1_weighted", "balanced_accuracy"])
+                     ("model", LogisticRegression(solver = "lbfgs", class_weight = {0:0.01, 1:0.99}))])
+model_cv_bal(pipeline, 1000)
 
 # Unversample majority class at 1:4 ratio
 # This block of code does not influence models, and just shows how under-sampling works
@@ -479,8 +480,8 @@ print(Counter(us_y))
 
 # Fit to training data and evaluate performance on test data (4:1 rebalancing)
 pipeline = Pipeline([("samp", RandomUnderSampler(sampling_strategy = 0.25)),
-                    ("model", LogisticRegression(solver = "lbfgs"))])
-model_cv(pipeline, 1000, ["f1_micro", "f1_macro", "f1_weighted", "balanced_accuracy"])
+                    ("model", LogisticRegression(solver = "lbfgs", class_weight = {0:0.01, 1:0.99}))])
+model_cv_bal(pipeline, 1000)
 
 
 
@@ -502,8 +503,8 @@ print(Counter(ous_y))
 # Find F-score, precision, and recall
 pipeline = Pipeline([("samp1", RandomOverSampler(sampling_strategy = 0.25)),
                      ("samp2", RandomUnderSampler(sampling_strategy = 0.5)),
-                     ("model", LogisticRegression(solver = "lbfgs"))])
-model_cv(pipeline, 1000, ["f1_micro", "f1_macro", "f1_weighted", "balanced_accuracy"])
+                     ("model", LogisticRegression(solver = "lbfgs", class_weight = {0:0.01, 1:0.99}))])
+model_cv_bal(pipeline, 1000)
 
 
 
