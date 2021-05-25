@@ -205,7 +205,7 @@ print(auc(recall, precision))
 
 In doing so, we get an AUC of 0.9459 and an AUPRC of 0.8660. The ROC and precision-recall curves can be seen in Figure \ref{fig:Figure4}; as can be seen here, the ROC curve exhibits high skill, which is largely driven by correct classification of the majority class due to the massive class imbalance. From the precision-recall curve, we also see a steep drop in precision when recall approaches 1, indicating strong separation between the two classes.
 
-```{r Figure4, eval = TRUE, echo = FALSE, out.width = "470px", out.height = "470px", fig.cap = "\\label{fig:Figure4} ROC curve (left) and precision-recall curve (right) for a logistic regression fit using a single validation set. The black lines represent the no-skill model, while the green lines represent the logistic regression; the black points are the locations at which the F1-score is maximised. \\bigskip"}
+```{r Figure4, eval = TRUE, echo = FALSE, out.width = "470px", out.height = "470px", fig.cap = "\\label{fig:Figure4} ROC curve (left) and precision-recall curve (right) for a logistic regression fit when using an unweighted logistic regression on a single validation set. The black lines represent the no-skill model, while the green lines represent the logistic regression; the black points are the locations at which the F1-score is maximised. \\bigskip"}
 
 knitr::include_graphics("Plot_Crv.jpeg")
 
@@ -213,39 +213,52 @@ knitr::include_graphics("Plot_Crv.jpeg")
 
 Note that by default, the probability threshold for classifying each observation is 0.5; if the predicted probability of belonging to a given class is 0.5 or greater, then an observation is assigned to that class, else it is assigned to the other class. However, this threshold of 0.5 may not be optimal, and there may be a higher or lower threshold that actually improves model performance. As such, we can tune our probability threshold to find a value that maximises some measure of model skill; for this example, we choose the F1-score. The results for finding the resulting model precision, recall, and F1-score for a range of probability thresholds can be found in \ref{fig:Figure5}; here, we see that the maximum F1-score of 0.893 occurs at a probability threshold of approximately 0.166. This F1-score offers a slight improvement over the F1-score of 0.868 that occurs when using the default probability threshold.
 
-```{r Figure5, eval = TRUE, echo = FALSE, out.width = "470px", out.height = "470px", fig.cap = "\\label{fig:Figure5} ROC curve (left) and precision-recall curve (right) for a logistic regression fit using a single validation set. The black lines represent the no-skill model, while the green lines represent the logistic regression; the black points are the locations at which the F1-score is maximised. \\bigskip"}
+## Rebalancing With Over- and Under-Sampling
+
+Sometimes, it may be necessary to reduce the imbalance between classes in order to increase model performance. Two possible techniques to accomplish this are random oversampling and undersampling. Oversampling increases the number of observations in the minority class by randomly replicating minority class observations, while undersampling decreases the number of observations in the majority class by randomly removing majority class observations. While both methods create more balanced data and can allow for better model fits, each one has its own disadvantages too: oversampling can increase data size (and thus require more computational resources for model fitting) and has the possibility to overfit, while undersampling can remove observations that are particularly important in constructing a decision boundary since observations are removed at random without any consideration regarding potential model impacts.
+
+Before performing oversampling or undersampling, we first establish a baseline level of performance by evaluating a model that utilises neither of these two sampling methods. Here, we fit a logistic regression with a 99:1 weight on the minority class, thus prioritising the correct classification of observations in the minority.
+
+``` {python}
+
+clfLrgC = LogisticRegression(solver = "lbfgs", class_weight = {0:0.01, 1:0.99})
+model_cv_bal(clfLrgC, 1000)
+
+```
+
+1000 replicates of 2-fold cross-validation results in a weighted accuracy of 0.8415, which is higher than any of the weighted SVM models earlier.
+
+We now rebalance the training data using oversampling. Because our `model_cv_bal` function also accepts pipelines as an argument, we can use the `Pipeline` function from `imbalanced-learn` to perform random oversampling before fitting a logistic regression, and then feed this pipeline to `model_cv_bal`. Thus, for each replicate in the cross-validation, the data will be split 50/50 into training and test sets, the training set will be oversampled, a logistic regression will be fit to the training set, and then model performance will be evaluated on the test set.
+
+```{r Figure5, eval = TRUE, echo = FALSE, out.width = "470px", out.height = "470px", fig.cap = "\\label{fig:Figure5} Precision and recall (left) and F1-Score (right) across the range of possible probability thresholds when using an unweighted logistic regression on a single validation set. \\bigskip"}
 
 knitr::include_graphics("Plot_Prt.jpeg")
 
 ```
 
-## Rebalancing With Over- and Under-Sampling
-
-Sometimes, it may be necessary to reduce the imbalance between classes in order to increase model performance. Two possible techniques to accomplish this are random oversampling and undersampling. Oversampling increases the number of observations in the minority class by randomly replicating minority class observations, while undersampling decreases the number of observations in the majority class by randomly removing majority class observations. While both methods create more balanced data and can allow for better model fits, each one has its own disadvantages too: oversampling can increase data size (and thus require more computational resources for model fitting) and has the possibility to overfit, while undersampling can remove observations that are particularly important in constructing a decision boundary since observations are removed at random without any consideration regarding potential model impacts.
-
-We first rebalance the training data using oversampling. Because our `model_cv` function also accepts pipelines as an argument, we can use the `Pipeline` function from `imbalanced-learn` to perform random oversampling before fitting a logistic regression, and then feed this pipeline to `model_cv`. Thus, for each replicate in the cross-validation, the data will be split 50/50 into training and test sets, the training set will be oversampled, a logistic regression will be fit to the training set, and then model performance will be evaluated on the test set.
-
 ``` {python}
 
 pipeline = Pipeline([("samp", RandomOverSampler(sampling_strategy = "minority")),
-                     ("model", LogisticRegression(solver = "lbfgs"))])
-model_cv(pipeline, 1000, ["f1_micro"])
+                     ("model", LogisticRegression(solver = "lbfgs",
+                                                  class_weight = {0:0.01, 1:0.99}))])
+model_cv_bal(pipeline, 1000)
 
 ```
 
-For the oversampling function `RandomOverSampler`, the `sampling_strategy` argument determines how the minority class will be oversampled. Setting this argument to `minority` oversamples the minority class at a 1:1 ratio with the majority class; thus, if the training set has 3900 majority class observations and 100 minority class observations, it will now have 3900 observations of each class after oversampling.
+For the oversampling function `RandomOverSampler`, the `sampling_strategy` argument determines how the minority class will be oversampled. Setting this argument to `minority` oversamples the minority class at a 1:1 ratio with the majority class; thus, if the training set has 3900 majority class observations and 100 minority class observations, it will now have 3900 observations of each class after oversampling. After employing this oversampling in our cross-validation, we now get a weighted accuracy of 0.9892, which is much higher than that resulting from the original sampling strategy.
 
 Next, we undersample the data using an almost identical pipeline, substituting `RandomOverSampler` with `RandomUnderSampler`.
 
 ``` {python}
 
 pipeline = Pipeline([("samp", RandomUnderSampler(sampling_strategy = "majority")),
-                     ("model", LogisticRegression(solver = "lbfgs"))])
-model_cv(pipeline, 1000, ["f1_micro"])
+                     ("model", LogisticRegression(solver = "lbfgs",
+                                                  class_weight = {0:0.01, 1:0.99}))])
+model_cv_bal(pipeline, 1000)
 
 ```
 
-Here, the `sampling_strategy` argument determines how the majority class will be undersampled. Setting this argument to `majority` undersamples the majority class at a 1:1 ratio with the minority class; thus, if the training set has 3900 majority class observations and 100 minority class observations, it will now have 100 observations of each class after undersampling.
+Here, the `sampling_strategy` argument determines how the majority class will be undersampled. Setting this argument to `majority` undersamples the majority class at a 1:1 ratio with the minority class; thus, if the training set has 3900 majority class observations and 100 minority class observations, it will now have 100 observations of each class after undersampling. After employing this undersampling in our cross-validation, we now get a weighted accuracy of 0.9899, which is slightly higher than that resulting from oversampling.
 
 We can also combine oversampling and undersampling to fine-tune the ratio of observations in the majority and minority classes, as can be seen below.
 
@@ -253,12 +266,13 @@ We can also combine oversampling and undersampling to fine-tune the ratio of obs
 
 pipeline = Pipeline([("samp1", RandomOverSampler(sampling_strategy = 0.25)),
                      ("samp2", RandomUnderSampler(sampling_strategy = 0.5)),
-                     ("model", LogisticRegression(solver = "lbfgs"))])
-model_cv(pipeline, 1000, ["f1_micro"])
+                     ("model", LogisticRegression(solver = "lbfgs",
+                                                  class_weight = {0:0.01, 1:0.99}))])
+model_cv_bal(pipeline, 1000)
 
 ```
 
-Here, we set `sampling_strategy` equal to 0.25 so that there is a 4:1 majority/minority class ratio after oversampling, and then set `sampling_strategy` to 0.5 so that there is a 2:1 majority/minority class ratio after undersampling. Thus, if the training set has 3900 majority class observations and 100 minority class observations, it will have 3900 majority class observations and 975 minority class observations after oversampling, and will then have 1950 majority class observations and 975 minority class observations after undersampling.
+Here, we set `sampling_strategy` equal to 0.25 so that there is a 4:1 majority/minority class ratio after oversampling, and then set `sampling_strategy` to 0.5 so that there is a 2:1 majority/minority class ratio after undersampling. Thus, if the training set has 3900 majority class observations and 100 minority class observations, it will have 3900 majority class observations and 975 minority class observations after oversampling, and will then have 1950 majority class observations and 975 minority class observations after undersampling. After employing this sequence of oversampling and undersampling in our cross-validation, we get a weighted accuracy of 0.9879, which is only slightly lower than that resulting from just oversampling or undersampling.
 
 # Multi-Class Classificaton
 
