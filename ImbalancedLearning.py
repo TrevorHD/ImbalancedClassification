@@ -404,15 +404,20 @@ print(thresh[argmax(f_scores)])
 print(max(f_scores))
 
 # Plot precision and recall versus probability threshold
+fig = pyplot.figure(figsize = (1.5, 1), dpi = 800)
 precision, recall, thresh = precision_recall_curve(test_y, p_model)
-pyplot.plot(numpy.append(thresh, 1), precision, linestyle = "-", label = "Precision", color = "green")
-pyplot.plot(numpy.append(thresh, 1), recall, linestyle = "-", label = "Recall", color = "blue")
-pyplot.plot(arange(0, 1, 0.001), f_scores, linestyle = "-", label = "F1-Score", color = "black")
-pyplot.xlabel("Threshold")
-pyplot.ylabel("Value")
-pyplot.legend(bbox_to_anchor = (0.87, 0.75, 0.1, 0.2))
-pyplot.show()
-pyplot.show()
+pyplot.plot(numpy.append(thresh, 1), precision, linestyle = "-", linewidth = 0.6, label = "Precision", color = "green")
+pyplot.plot(numpy.append(thresh, 1), recall, linestyle = "-", linewidth = 0.6, label = "Recall", color = "blue")
+pyplot.plot(arange(0, 1, 0.001), f_scores, linestyle = "-", linewidth = 0.6, label = "F1-Score", color = "black")
+pyplot.xlabel("Threshold", fontsize = 5)
+pyplot.ylabel("Value", fontsize = 5)
+pyplot.xticks(fontsize = 4)
+pyplot.yticks(fontsize = 4)
+pyplot.tick_params(length = 2, width = 0.5)
+lg = pyplot.legend(bbox_to_anchor = (0.82, 0.09, 0.1, 0.2), fontsize = 2)
+lg.get_frame().set_linewidth(0.3)
+pyplot.tight_layout(pad = 0.4, w_pad = 1.2, h_pad = 1.0)
+pyplot.savefig("Plot_PRT.jpeg", dpi = 800, facecolor = "white")
 
 
 
