@@ -28,7 +28,7 @@ Imbalanced data can prove to be quite challenging to work with when using conven
 
 Here, we use synthetic data to explore some of the tools available in Python for classifying imbalanced data, heavily relying on `sklearn` for most of model and scoring functions but also utilising some of the various sampling functions from `imbalanced-learn`. Some of the topics we explore include scoring metrics such as area under the precision-recall curve (AUPRC), cost-sensitive learning using class weights, and various techniques to rebalance data such as SMOTE and ADASYN. We also explore imbalanced classification in datasets with binary classes as well as in datasets with three or more different classes.
 
-# Two-class Classification
+# Two-Class Classification
 
 ## Data Generation
 First, we set up a two-class classification problem. We randomly generate a total of 10000 samples, with the majority class making up 99% of the data and the minority class making up the other 1%. We can do this using the `make_classification` function from `sklearn`.
@@ -221,7 +221,44 @@ knitr::include_graphics("Plot_Prt.jpeg")
 
 ## Rebalancing With Over- and Under-Sampling
 
+Sometimes, it may be necessary to reduce the imbalance between classes in order to increase model performance. Two possible techniques to accomplish this are random oversampling and undersampling. Oversampling increases the number of observations in the minority class by randomly replicating minority class observations, while undersampling decreases the number of observations in the majority class by randomly removing majority class observations. While both methods create more balanced data and can allow for better model fits, each one has its own disadvantages too: oversampling can increase data size (and thus require more computational resources for model fitting) and has the possibility to overfit, while undersampling can remove observations that are particularly important in constructing a decision boundary since observations are removed at random without any consideration regarding potential model impacts.
 
+We first rebalance the training data using oversampling. Because our `model_cv` function also accepts pipelines as an argument, we can use the `Pipeline` function from `imbalanced-learn` to perform random oversampling before fitting a logistic regression, and then feed this pipeline to `model_cv`. Thus, for each replicate in the cross-validation, the data will be split 50/50 into training and test sets, the training set will be oversampled, a logistic regression will be fit to the training set, and then model performance will be evaluated on the test set.
+
+``` {python}
+
+pipeline = Pipeline([("samp", RandomOverSampler(sampling_strategy = "minority")),
+                     ("model", LogisticRegression(solver = "lbfgs"))])
+model_cv(pipeline, 1000, ["f1_micro"])
+
+```
+
+For the oversampling function `RandomOverSampler`, the `sampling_strategy` argument determines how the minority class will be oversampled. Setting this argument to `minority` oversamples the minority class at a 1:1 ratio with the majority class; thus, if the training set has 3900 majority class observations and 100 minority class observations, it will now have 3900 observations of each class after oversampling.
+
+Next, we undersample the data using an almost identical pipeline, substituting `RandomOverSampler` with `RandomUnderSampler`.
+
+``` {python}
+
+pipeline = Pipeline([("samp", RandomUnderSampler(sampling_strategy = "majority")),
+                     ("model", LogisticRegression(solver = "lbfgs"))])
+model_cv(pipeline, 1000, ["f1_micro"])
+
+```
+
+Here, the `sampling_strategy` argument determines how the majority class will be undersampled. Setting this argument to `majority` undersamples the majority class at a 1:1 ratio with the minority class; thus, if the training set has 3900 majority class observations and 100 minority class observations, it will now have 100 observations of each class after undersampling.
+
+We can also combine oversampling and undersampling to fine-tune the ratio of observations in the majority and minority classes, as can be seen below.
+
+``` {python}
+
+pipeline = Pipeline([("samp1", RandomOverSampler(sampling_strategy = 0.25)),
+                     ("samp2", RandomUnderSampler(sampling_strategy = 0.5)),
+                     ("model", LogisticRegression(solver = "lbfgs"))])
+model_cv(pipeline, 1000, ["f1_micro"])
+
+```
+
+Here, we set `sampling_strategy` equal to 0.25 so that there is a 4:1 majority/minority class ratio after oversampling, and then set `sampling_strategy` to 0.5 so that there is a 2:1 majority/minority class ratio after undersampling. Thus, if the training set has 3900 majority class observations and 100 minority class observations, it will have 3900 majority class observations and 975 minority class observations after oversampling, and will then have 1950 majority class observations and 975 minority class observations after undersampling.
 
 # Multi-Class Classificaton
 
