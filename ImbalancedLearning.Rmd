@@ -201,13 +201,23 @@ print(auc(recall, precision))
 
 ```
 
-In doing so, we get an AUC of 0.9459 and an AUPRC of 0.8660. The ROC and precision-recall curves can be seen in Figure \ref{fig:Figure4}; as can be seen here, the ROC curve exhibits high skill, which is lergely driven by correct classification of the majority class due to the massive class imbalance. From the precision-recall curve, we also see a steep drop in precision when recall approaches 1, indicating strong separation between the two classes.
+In doing so, we get an AUC of 0.9459 and an AUPRC of 0.8660. The ROC and precision-recall curves can be seen in Figure \ref{fig:Figure4}; as can be seen here, the ROC curve exhibits high skill, which is largely driven by correct classification of the majority class due to the massive class imbalance. From the precision-recall curve, we also see a steep drop in precision when recall approaches 1, indicating strong separation between the two classes.
 
-```{r Figure4, eval = TRUE, echo = FALSE, out.width = "470px", out.height = "470px", fig.cap = "\\label{fig:Figure4} ROC curve (left) and precision-recall curve (right) for a logistic regression fit using a single validation set. The dashed lines represent the no-skill model. \\bigskip"}
+```{r Figure4, eval = TRUE, echo = FALSE, out.width = "470px", out.height = "470px", fig.cap = "\\label{fig:Figure4} ROC curve (left) and precision-recall curve (right) for a logistic regression fit using a single validation set. The black lines represent the no-skill model, while the green lines represent the logistic regression; the black points are the locations at which the F1-score is maximised. \\bigskip"}
 
 knitr::include_graphics("Plot_Crv.jpeg")
 
 ```
+
+Note that by default, the probability threshold for classifying each observation is 0.5; if the predicted probability of belonging to a given class is 0.5 or greater, then an observation is assigned to that class, else it is assigned to the other class. However, this threshold of 0.5 may not be optimal, and there may be a higher or lower threshold that actually improves model performance. As such, we can tune our probability threshold to find a value that maximises some measure of model skill; for this example, we choose the F1-score. The results for finding the resulting model precision, recall, and F1-score for a range of probability thresholds can be found in \ref{fig:Figure5}; here, we see that the maximum F1-score of 0.893 occurs at a probability threshold of approximately 0.166. This F1-score offers a slight improvement over the F1-score of 0.868 that occurs when using the default probability threshold.
+
+```{r Figure5, eval = TRUE, echo = FALSE, out.width = "470px", out.height = "470px", fig.cap = "\\label{fig:Figure5} ROC curve (left) and precision-recall curve (right) for a logistic regression fit using a single validation set. The black lines represent the no-skill model, while the green lines represent the logistic regression; the black points are the locations at which the F1-score is maximised. \\bigskip"}
+
+knitr::include_graphics("Plot_Prt.jpeg")
+
+```
+
+
 
 ## Rebalancing With Over- and Under-Sampling
 
