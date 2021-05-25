@@ -13,6 +13,8 @@ header-includes:
 urlcolor: blue
 ---
 
+\newpage
+
 ```{r setup, include = FALSE}
 
 knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
@@ -217,9 +219,9 @@ knitr::include_graphics("Plot_Prt.jpeg")
 
 ```
 
-
-
 ## Rebalancing With Over- and Under-Sampling
+
+
 
 # Multi-Class Classificaton
 
