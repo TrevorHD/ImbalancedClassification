@@ -31,6 +31,7 @@ Here, we use synthetic data to explore some of the tools available in Python for
 # Two-Class Classification
 
 ## Data Generation
+
 First, we set up a two-class classification problem. We randomly generate a total of 10000 samples, with the majority class making up 99% of the data and the minority class making up the other 1%. We can do this using the `make_classification` function from `sklearn`.
 
 ``` {python}
@@ -275,6 +276,25 @@ Here, we set `sampling_strategy` equal to 0.25 so that there is a 4:1 majority/m
 # Multi-Class Classificaton
 
 ## Data Generation
+
+With some minor adjustments, we can adapt our code for generating synthetic two-class data to include three or more classes. Here, we randomly generate a total of 10000 samples from four classes, with three classes making up 99% of the data and the minority class making up the other 1%. We can do this using the `make_blobs` function from `sklearn`, which generates isotropic Gaussian distributions of data in a given number of dimensions.
+
+``` {python}
+
+data_x, data_y = make_blobs(n_samples = [3500, 3500, 3400, 100], n_features = 2,
+                            cluster_std = [1.5, 1.5, 1, 0.8], random_state = 1,
+                            centers = numpy.array([[1.1, 2.0], [1.5, 8.5],
+                                                   [6.4, 7.4], [5.2, 3.5]]))
+
+```
+
+As can be seen in Figure \ref{fig:Figure6}, we again allow for a bit of overlap between the minority class and the other classes so that we can explore the trade-offs involved in misclassifying points in the overlap zone.
+
+```{r Figure6, eval = TRUE, echo = FALSE, out.width = "450px", out.height = "450px", fig.cap = "\\label{fig:Figure6} A 50/50 split of the data into training (left) and test (right) sets. The blue, purple, black, and red classes are (respectively) generated at a 35:35:34:1 ratio. \\bigskip \\smallskip"}
+
+knitr::include_graphics("Plot_Pts2.jpeg")
+
+```
 
 ## Support Vector Machines: Cost-Insensitive
 
