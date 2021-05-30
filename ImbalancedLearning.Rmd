@@ -365,6 +365,14 @@ After using the new scorer in `model_cv_bal`, we find that the kernel with $C=1$
 
 ## Rebalancing With SMOTE and ADASYN
 
+```{r Figure8, eval = TRUE, echo = FALSE, out.width = "450px", out.height = "450px", fig.pos = "!t", fig.cap = "\\label{fig:Figure8} Three-class data without any rebalancing (top-left) and with rebalancing using SMOTE (top-right), borderline SMOTE (bottom-left), and ADASYN (bottom-right)."}
+
+knitr::include_graphics("Plot_SMOTE.jpeg")
+
+```
+
+In our earlier explanation of rebalancing methods on binary data, we demonstrate how to randomly oversample and undersample data to reduce the disparity between the majority and minority classes. Here, we explore some non-random rebalancing methods, and while these additional methods can be applied to binary data, we fill follow in the footsteps of the previous section and use multi-class data. First, we use `make_blobs` to generate some new data, with a total of 10000 observations across 3 classes at a 99:99:2 ratio.
+
 ``` {python}
 
 data_x, data_y = make_blobs(n_samples = [4950, 4950, 100], n_features = 2,
@@ -373,11 +381,17 @@ data_x, data_y = make_blobs(n_samples = [4950, 4950, 100], n_features = 2,
 
 ```
 
+Rather than simply replicating existing observations in the minority class like we did with random oversampling, we can actually use these points to generate new minority-class observations using the Synthetic Minority Oversampling Technique (SMOTE). This method randomly selects a point, randomly selects another nearby point, and then generates a new point somewhere in between.
+
 ``` {python}
 
 s_x, s_y = SMOTE(sampling_strategy = {2:1000}).fit_resample(train_x, train_y)
 
 ```
+
+Unlike binary data, data with 3 or more classes requires us to specify our `sampling_strategy` argument a little differently. Whereas before we could simply specify a proportion to oversample the minority class at relative to the majority class, we now have to use a dict to specify the number of observations in each class that we want to resample from. In this case, we only want to resample from class 2 at 1000 observations rather than the 100 we started with. As can be seen in Figure \ref{fig:Figure8}, using SMOTE results in a web-like set of points due to the fact that new points are always added on a line between two existing points.
+
+We can also use borderline SMOTE, which operates using the exact same algorithm as SMOTE, but focuses the generation of new data points close to the boundary with the other classes, thus increasing the number of observations in the region where observations are more likely to be misclassified. This can provide additional resolution in the area where it is needed most, which may improve the accuracy of any models fit to the data.
 
 ``` {python}
 
@@ -385,14 +399,13 @@ bs_x, bs_y = BorderlineSMOTE(sampling_strategy = {2:1000}).fit_resample(train_x,
 
 ```
 
+We can also generate new points in the minority class by using Adaptive Synthetic Sampling (ADASYN), where observations are generated in an inverse relationship to density; more observations are generated where there are few minority class observations, and fewer observations are generated where there are more minority class observations.
+
 ``` {python}
 
 a_x, a_y = ADASYN(sampling_strategy = {2:1000}).fit_resample(train_x, train_y)
 
 ```
 
-```{r Figure8, eval = TRUE, echo = FALSE, out.width = "450px", out.height = "450px", fig.cap = "\\label{fig:Figure8} Three-class data without any rebalancing (top-left) and with rebalancing using SMOTE (top-right), borderline SMOTE (bottom-left), and ADASYN (bottom-right)."}
+As can be seen in Figure \ref{fig:Figure8}, because ADASYN is an adaptation of SMOTE, dense lines of points are visible just like they are in SMOTE; however, unlike SMOTE, ADASYN results in a much higher density of minority class observations in areas where density was previously much lower.
 
-knitr::include_graphics("Plot_SMOTE.jpeg")
-
-```
