@@ -364,3 +364,35 @@ scorer = make_scorer(balanced_accuracy_score2, w1 = 1/100, w2 = 1/100,
 After using the new scorer in `model_cv_bal`, we find that the kernel with $C=1$ performs the best with a mean weighted accuracy of 0.98982, and the kernel with $C=10$ performs the worst with a mean weighted accuracy of 0.95871.
 
 ## Rebalancing With SMOTE and ADASYN
+
+``` {python}
+
+data_x, data_y = make_blobs(n_samples = [4950, 4950, 100], n_features = 2,
+                            centers = numpy.array([[1.1, 1.8], [1.5, 8.7], [7.2, 6.1]]),
+                            cluster_std = [1.5, 1.5, 1.8], random_state = 1)
+
+```
+
+``` {python}
+
+s_x, s_y = SMOTE(sampling_strategy = {2:1000}).fit_resample(train_x, train_y)
+
+```
+
+``` {python}
+
+bs_x, bs_y = BorderlineSMOTE(sampling_strategy = {2:1000}).fit_resample(train_x, train_y)
+
+```
+
+``` {python}
+
+a_x, a_y = ADASYN(sampling_strategy = {2:1000}).fit_resample(train_x, train_y)
+
+```
+
+```{r Figure8, eval = TRUE, echo = FALSE, out.width = "450px", out.height = "450px", fig.cap = "\\label{fig:Figure8} Three-class data without any rebalancing (top-left) and with rebalancing using SMOTE (top-right), borderline SMOTE (bottom-left), and ADASYN (bottom-right)."}
+
+knitr::include_graphics("Plot_SMOTE.jpeg")
+
+```
