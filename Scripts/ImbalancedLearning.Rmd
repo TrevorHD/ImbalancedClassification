@@ -5,11 +5,11 @@ author: "Trevor H. Drees"
 output:
   pdf_document:
     toc: true
-  in_header: "Header.tex"
+  in_header: "../Header.tex"
 header-includes:
   - \usepackage{titling}
   - \renewcommand{\and}{\\}
-  - \input{Header.tex}
+  - \input{../Header.tex}
 urlcolor: blue
 ---
 
@@ -26,13 +26,13 @@ library(reticulate)
 
 Imbalanced data can prove to be quite challenging to work with when using conventional machine learning algorithms, as many of these algorithms operate under the assumption that all classes in the data are approximately balanced. However, in many cases, the data we are most interested in classifying are often a minority of observations in the entire set; for example, a few spam emails out of hundreds of legitimate messages, or a few fraudulent credit card transactions out of thousands of legitimate purchases. Because traditional measurements of model performance often focus on metrics such as classification accuracy, they often fail to adequately capture the minority class, and we may observe instances when a model on a dataset with 990 observations in class A and 10 observations in class B can achieve 99% accuracy by completely ignoring class B and classifying everything as A. Also, the costs of misclassification might vary between the classes; for example, while fraudulent credit card transactions are extremely rare compared to legitimate purchases, a fraudulent transaction that is not detected may cost a bank or credit card company significantly more than a legitimate transaction that is falsely flagged as fraudulent. Many algorithms by default will assume equal costs of misclassification, which may not necessarily be true for certain scenarios.
 
-Here, we use synthetic data to explore some of the tools available in Python for classifying imbalanced data, heavily relying on `sklearn` for most of model and scoring functions but also utilising some of the various sampling functions from `imbalanced-learn`. Some of the topics we explore include scoring metrics such as area under the precision-recall curve (AUPRC), cost-sensitive learning using class weights, and various techniques to rebalance data such as SMOTE and ADASYN. We also explore imbalanced classification in datasets with binary classes as well as in datasets with three or more classes.
+Here, we use synthetic data to explore some of the tools available in Python for classifying imbalanced data, heavily relying on `scikit-learn` for most model and scoring functions but also utilising some of the various sampling functions from `imbalanced-learn`. Some of the topics we explore include scoring metrics such as area under the precision-recall curve (AUPRC), cost-sensitive learning using class weights, and various techniques to rebalance data such as SMOTE and ADASYN. We also explore imbalanced classification in datasets with binary classes as well as in datasets with three or more classes.
 
 # Two-Class Classification
 
 ## Data Generation
 
-First, we set up a two-class classification problem. We randomly generate a total of 10000 samples, with the majority class making up 99% of the data and the minority class making up the other 1%. We can do this using the `make_classification` function from `sklearn`.
+First, we set up a two-class classification problem. We randomly generate a total of 10000 samples, with the majority class making up 99% of the data and the minority class making up the other 1%. We can do this using the `make_classification` function from `scikit-learn`.
 
 ``` {python}
 
@@ -47,7 +47,7 @@ As can be seen in Figure \ref{fig:Figure1}, we allow for a bit of overlap betwee
 
 ```{r Figure1, eval = TRUE, echo = FALSE, out.width = "450px", out.height = "450px", fig.cap = "\\label{fig:Figure1} A 50/50 split of the data into training (left) and test (right) sets. The majority class outnumbers the minority class by a ratio of 99:1. \\bigskip \\smallskip"}
 
-knitr::include_graphics("Figures/Plot_Pts.jpeg")
+knitr::include_graphics("../Figures/Plot_Pts.jpeg")
 
 ```
 
@@ -62,7 +62,7 @@ train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, test_size = 
 
 ```
 
-We can then fit the model to the training set before evaluating it on the test set. To fit the LDA and QDA models, we can use the `LinearDiscriminantAnalysis` and `QuadraticDiscriminantAnalysis` functions from `sklearn`, as is shown in the code below. For each model, we first create a model object using each its respective function and then use the `fit` method to fit the models to the training data.
+We can then fit the model to the training set before evaluating it on the test set. To fit the LDA and QDA models, we can use the `LinearDiscriminantAnalysis` and `QuadraticDiscriminantAnalysis` functions from `scikit-learn`, as is shown in the code below. For each model, we first create a model object using each its respective function and then use the `fit` method to fit the models to the training data.
 
 ``` {python}
 
@@ -92,7 +92,7 @@ def model_cv(obj, n_rep, metList, data_x = data_x, data_y = data_y):
 
 ```{r Figure2, eval = TRUE, echo = FALSE, out.width = "450px", out.height = "450px", fig.cap = "\\label{fig:Figure2} Decision boundaries generated by fitting LDA (left) and QDA (right) models to the training data. \\smallskip"}
 
-knitr::include_graphics("Figures/Plot_DA.jpeg")
+knitr::include_graphics("../Figures/Plot_DA.jpeg")
 
 ```
 
@@ -130,7 +130,7 @@ After using the `model_cv` function we defined earlier to perform 1000 instances
 
 ```{r Figure3, eval = TRUE, echo = FALSE, out.width = "600px", out.height = "600px", fig.cap = "\\label{fig:Figure3} Decision boundaries generated by various SVM kernels to the training data, with no weight on the minority class (left column) and a 1:99 weight favouring the minority class (right column)."}
 
-knitr::include_graphics("Figures/Plot_SVM.jpeg")
+knitr::include_graphics("../Figures/Plot_SVM.jpeg")
 
 ```
 
@@ -147,7 +147,7 @@ clfLinC.fit(train_x, train_y)
 
 Here, we specify that the classes are weighted at a 1:99 ratio, with the weight of a minority class observation 99 times as high as that of a majority class observation. Thus, there is an extreme penalty for misclassifying an observation from the minority class compared to doing so on an observation from the majority class; as such, in comparison to the unweighted kernels, we would expect the decision boundary to shift upward, "sacrificing" several majority observations to correctly classify a few additional minority observations. This is evident in the right-hand panels of Figure \ref{fig:Figure3}, where the decision boundaries now cut into the majority observations and misclassify several of them to correctly classify an additional 4 or 5 observations in the minority class. Note that the `LinearDiscriminantAnalysis` and `QuadraticDiscriminantAnalysis` functions, at the time this was written, do not support a `class_weight` argument, hence our decision to use it on SVM rather than LDA or QDA.
 
-We can modify the four SVM models used earlier to account for a 1:99 class weight, but how can we evaluate their performance? Because our observations now have different weights depending on their class, a micro-averaged F1-score may no longer be appropriate since it gives equal importance to each observation. To avoid this issue, we can use balanced accuracy in place of micro-averaged F1-score in our `model_cv` function; this balanced accuracy, calculated using the `balanced_accuracy_score` function from `sklearn`, is the average of recall obtained on each class. This equally weights the classes by default, but we can re-write the source code for this function to allow for class-specific weights to be assigned.
+We can modify the four SVM models used earlier to account for a 1:99 class weight, but how can we evaluate their performance? Because our observations now have different weights depending on their class, a micro-averaged F1-score may no longer be appropriate since it gives equal importance to each observation. To avoid this issue, we can use balanced accuracy in place of micro-averaged F1-score in our `model_cv` function; this balanced accuracy, calculated using the `balanced_accuracy_score` function from `scikit-learn`, is the average of recall obtained on each class. This equally weights the classes by default, but we can re-write the source code for this function to allow for class-specific weights to be assigned.
 
 ``` {python}
 
@@ -189,7 +189,7 @@ After using the `model_cv_bal` function to perform 1000 instances of 2-fold cros
 
 Typically, when working with balanced data sets, we can plot a receiver-operator characteristic (ROC) curve and use the area under the curve (AUC) as a metric for model skill, allowing us to compare predictive performance between models. However, ROC curves can be misleading on imbalanced data like ours because, much like accuracy, they will be biased towards the majority class. However, we can use precision-recall (PR) curves to avoid this issue, focusing on the trade-off between precision and recall rather than that between recall and false positive rate.
 
-Because we will eventually work with predicted probabilities when plotting these curves, and SVM does not return probabilities after fitting the models, we will use a logistic regression for this example. We use the `LogisticRegression` function from `sklearn` to fit a logistic regression, and then use the `predict_proba` method to get predicted probabilities. For this example, we assume equal weights between the two classes; however, given that `LogisticRegression` supports a `class_weight` argument, we could weight the classes like we did in the previous example if we wish.
+Because we will eventually work with predicted probabilities when plotting these curves, and SVM does not return probabilities after fitting the models, we will use a logistic regression for this example. We use the `LogisticRegression` function from `scikit-learn` to fit a logistic regression, and then use the `predict_proba` method to get predicted probabilities. For this example, we assume equal weights between the two classes; however, given that `LogisticRegression` supports a `class_weight` argument, we could weight the classes like we did in the previous example if we wish.
 
 ``` {python}
 
@@ -217,7 +217,7 @@ In doing so, we get an AUC of 0.9459 and an AUPRC of 0.8660. The ROC and precisi
 
 ```{r Figure4, eval = TRUE, echo = FALSE, out.width = "470px", out.height = "470px", fig.cap = "\\label{fig:Figure4} ROC curve (left) and precision-recall curve (right) for a logistic regression fit when using an unweighted logistic regression on a single validation set. The black lines represent the no-skill model, while the green lines represent the logistic regression; the black point on the precision-recall curve is the location at which the F1-score (i.e. the harmonic mean of precision and recall) is maximised. \\bigskip"}
 
-knitr::include_graphics("Figures/Plot_Crv.jpeg")
+knitr::include_graphics("../Figures/Plot_Crv.jpeg")
 
 ```
 
@@ -229,6 +229,12 @@ Sometimes, it may be necessary to reduce the imbalance between classes in order 
 
 Before performing oversampling or undersampling, we first establish a baseline level of performance by evaluating a model that utilises neither of these two rebalancing methods. Here, we fit a logistic regression with a 99:1 weight on the minority class, thus prioritising the correct classification of observations in the minority.
 
+```{r Figure5, eval = TRUE, echo = FALSE, out.width = "470px", out.height = "470px", fig.cap = "\\label{fig:Figure5} Precision and recall (left) and F1-score (right) across the range of possible probability thresholds when using an unweighted logistic regression on a single validation set. \\bigskip"}
+
+knitr::include_graphics("../Figures/Plot_Prt.jpeg")
+
+```
+
 ``` {python}
 
 clfLrgC = LogisticRegression(solver = "lbfgs", class_weight = {0:0.01, 1:0.99})
@@ -237,12 +243,6 @@ model_cv_bal(clfLrgC, 1000)
 ```
 
 1000 replicates of 2-fold cross-validation results in a weighted accuracy of 0.8415, which is slightly higher than any of the weighted SVM models from our earlier analyses.
-
-```{r Figure5, eval = TRUE, echo = FALSE, out.width = "470px", out.height = "470px", fig.cap = "\\label{fig:Figure5} Precision and recall (left) and F1-score (right) across the range of possible probability thresholds when using an unweighted logistic regression on a single validation set. \\bigskip"}
-
-knitr::include_graphics("Figures/Plot_Prt.jpeg")
-
-```
 
 We now rebalance the training data using oversampling. Because our `model_cv_bal` function also accepts pipelines as an argument, we can use the `Pipeline` function from `imbalanced-learn` to condense any data transformations and model fits into a single object for the sake of convenience. For example, we can define a pipeline that performs random oversampling on the training data before fitting a logistic regression to it, and then feed this particular pipeline to the `obj` argument in `model_cv_bal`. As can be seen below, for each replicate in the cross-validation, the data will be split 50/50 into training and test sets, the training set will be oversampled, a logistic regression will be fit to the training set, and then model performance will be evaluated on the test set.
 
@@ -288,7 +288,7 @@ Here, we set `sampling_strategy` equal to 0.25 so that there is a 4:1 majority/m
 
 ## Data Generation
 
-With some minor adjustments, we can adapt our code for generating synthetic two-class data to include three or more classes. Here, we randomly generate a total of 10000 samples from four classes, with three classes making up 99% of the data and the minority class making up the other 1%. We can do this using the `make_blobs` function from `sklearn`, which generates isotropic Gaussian distributions of data in a given number of dimensions.
+With some minor adjustments, we can adapt our code for generating synthetic two-class data to include three or more classes. Here, we randomly generate a total of 10000 samples from four classes, with three classes making up 99% of the data and the minority class making up the other 1%. We can do this using the `make_blobs` function from `scikit-learn`, which generates isotropic Gaussian distributions of data in a given number of dimensions.
 
 ``` {python}
 
@@ -303,7 +303,7 @@ As can be seen in Figure \ref{fig:Figure6}, we again allow for a bit of overlap 
 
 ```{r Figure6, eval = TRUE, echo = FALSE, out.width = "450px", out.height = "450px", fig.cap = "\\label{fig:Figure6} A 50/50 split of the data into training (left) and test (right) sets. The blue, purple, black, and red classes are (respectively) generated at a 35:35:34:1 ratio. \\bigskip \\smallskip"}
 
-knitr::include_graphics("Figures/Plot_Pts2.jpeg")
+knitr::include_graphics("../Figures/Plot_Pts2.jpeg")
 
 ```
 
@@ -326,7 +326,7 @@ After using the `model_cv` function we defined earlier to perform 1000 instances
 
 ```{r Figure7, eval = TRUE, echo = FALSE, out.width = "600px", out.height = "600px", fig.cap = "\\label{fig:Figure7} Decision boundaries generated by various SVM kernels to the training data, with no weight on the minority class (left column) and a 1:1:1:97 weight favouring the minority class (right column)."}
 
-knitr::include_graphics("Figures/Plot_SVM2.jpeg")
+knitr::include_graphics("../Figures/Plot_SVM2.jpeg")
 
 ```
 
@@ -365,9 +365,9 @@ After using the new scorer in `model_cv_bal`, we find that the kernel with $C=1$
 
 ## Rebalancing With SMOTE and ADASYN
 
-```{r Figure8, eval = TRUE, echo = FALSE, out.width = "450px", out.height = "450px", fig.pos = "!t", fig.cap = "\\label{fig:Figure8} Three-class data without any rebalancing (top-left) and with rebalancing using SMOTE (top-right), borderline SMOTE (bottom-left), and ADASYN (bottom-right)."}
+```{r Figure8, eval = TRUE, echo = FALSE, out.width = "450px", out.height = "450px", fig.pos = "!t", fig.cap = "\\label{fig:Figure8} Three-class data without any rebalancing (top-left) and with rebalancing using SMOTE (top-right), borderline SMOTE (bottom-left), and ADASYN (bottom-right). \\bigskip \\smallskip"}
 
-knitr::include_graphics("Figures/Plot_SMOTE.jpeg")
+knitr::include_graphics("../Figures/Plot_SMOTE.jpeg")
 
 ```
 
@@ -408,4 +408,12 @@ a_x, a_y = ADASYN(sampling_strategy = {2:1000}).fit_resample(train_x, train_y)
 ```
 
 As can be seen in Figure \ref{fig:Figure8}, because ADASYN is an adaptation of SMOTE, dense lines of points are visible just like they are in SMOTE; however, unlike SMOTE, ADASYN results in a much higher density of minority class observations in areas where density was previously much lower.
+
+# Conclusion
+
+Here, we use synthetic data to explore some of the tools available in Python for classifying imbalanced data, heavily relying on `scikit-learn` for most model and scoring functions but also utilising some of the various sampling functions from `imbalanced-learn`. Some of the topics we explore include scoring metrics such as area under the precision-recall curve (AUPRC), cost-sensitive learning using class weights, and various techniques to rebalance data such as SMOTE and ADASYN. We also explore imbalanced classification in datasets with binary classes as well as in datasets with three or more classes.
+
+We show that imbalanced data comes with its own set of challenges, namely in finding appropriate measures of model performance when the minority class is more important than the majority class, and in fitting models that allow for a higher weight on the minority class in order to prioritise correct classification of those particular observations. Solutions to these challenges include arguments such as `class_weight` that can prioritise certain classes when fitting the model, or the use of custom scoring functions when evaluating model performance. These solutions are not exhaustive, though, and there are plenty other methods for dealing with imbalanced data that are not discussed here.
+
+It is also worth noting that we only scrape the surface of what `scikit-learn` can do in terms of machine learning, as there are plenty of other tools available in this package such as decision trees, random forests, $k$-nearest neighbours algorithms, and neural networks, all of which we could have used in our analyses. However, though we use a limited number of models in our analyses here, we demonstrate that `scikit-learn` is an incredibly useful tool for machine learning on imbalanced data in Python.
 
