@@ -1,6 +1,6 @@
 # Overview
 
-An exploration of classifying imbalanced data in Python, with focus placed on tools from the `sklearn` and `imbalanced-learn` packages. Includes topics such as cost-sensitive learning, precision-recall curves, and rebalancing techniques such as SMOTE, ADASYN, and random over/under-sampling.
+An exploration of classifying imbalanced data in Python, with focus placed on tools and functions from the `sklearn` and `imbalanced-learn` packages. Includes topics such as cost-sensitive learning, precision-recall curves, and rebalancing techniques such as SMOTE, ADASYN, and random over/under-sampling.
 
 <br/>
 
@@ -22,16 +22,3 @@ An exploration of classifying imbalanced data in Python, with focus placed on to
 
 **ImbalancedLearning** *(.pdf)* - A PDF report of the analyses.
 
-<br/>
-
-# Featured Images
-
-Noteworthy or interesting plots, images, figures, and other graphical outputs from the code are included below.
-
-<kbd>![](https://github.com/TrevorHD/ImbalancedClassification/blob/main/Figures/Plot_SMOTE.jpeg)</kbd>
-  
-<kbd>![](https://github.com/TrevorHD/ImbalancedClassification/blob/main/Figures/Plot_SVM.jpeg)</kbd>
-
-<kbd>![](https://github.com/TrevorHD/ImbalancedClassification/blob/main/Figures/Plot_PRT.jpeg)</kbd>
-
-<kbd>![](https://github.com/TrevorHD/ImbalancedClassification/blob/main/Figures/Plot_Crv.jpeg)</kbd>
